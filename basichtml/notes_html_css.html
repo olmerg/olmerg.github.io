@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<!--  The head element is just there to tell the browser important information like title metadata -->
+<head>
+  <!-- Below this is a <title> element. You may be wondering why "Andy's Notes" doesn't actually show up anywhere on the page. The reason is that <title> elements are actually what tell the browser what text to put on the tab for your page so that users can find it when they have many tabs open. This title is actually being ignored in this tab (instead the title is "A Pen by Andy Brown"), but I wanted to include it anyway. -->
+  <title>Notes about basic of Html </title>
+  <!-- <meta>  tag provides metadata about the HTML document. Metadata will not be displayed on the page, but will be machine parsable.  -->
+  <meta name="description" content="Notes about basic of Html">
+  <meta name="keywords" content="HTML,CSS">
+  <meta name="author" content="Olmerg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- <link> tag defines a link between a document and an external resource which is required by this webpage -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<!-- body contain the data that will be presented in the web page -->
+<body>
+  <!-- The <h1> to <h6> tags are used to define HTML headings. The format of heading should be defined in the css-->
+  <h1>Notes about basic of Html</h1>
+<!--The <div> tag defines a division or a section in an HTML document.-->
+    <h2>Table of Contents</h2>
+  <div class="TOC">
+    <!-- <ol> tag defines an ordered list. An ordered list can be numerical or alphabetical. -->
+    <ol>
+      <!-- <li> means "list item". href link to other webpage or #name-id some place of this web page-->
+      <li><a href="#lesson-1">Lesson 1: The Basics of the Web and HTML</a>
+        <!-- <ul> it is unordered list (without numbers)-->
+        <ul>
+          <li><a href="#lesson-1-1">How the Web Works</a></li>
+          <li><a href="#lesson-1-2">HTML</a></li>
+          <li><a href="#lesson-1-3">Tags vs. Elements vs. Attributes</a></li>
+          <li><a href="#lesson-1-4">Why Computers are Stupid</a></li>
+          <li><a href="#lesson-1-5">Inline vs Block Elements</a></li>
+        </ul>
+      </li>
+      <li class="TOC-lesson"><a href="#lesson-2">Lesson 2: Creating a Structured Document with HTML</a>
+        <ul>
+          <li><a href="#lesson-2-1">Concepts</a></li>
+          <li><a href="#lesson-2-2">Document Object Model (DOM)</a></li>
+          <li><a href="#lesson-2-3">Indentations and Boxes</a></li>
+          <li><a href="#lesson-2-4">Developer tools</a></li>
+        </ul>
+      </li>
+      <li class="TOC-lesson"><a href="#lesson-3">Lesson 3: Adding CSS Style to HTML Structure</a>
+        <ul>
+          <li><a href="#lesson-3-1">What is CSS?</a></li>
+          <li><a href="#lesson-3-2">Tips</a></li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <div class="lesson">
+    <h2 id="lesson-1">Lesson 1: The Basics of the Web and HTML</h2>
+    <div class="concept" id="lesson-1-1">
+      <div class="concept-title">
+        How the Web Works
+      </div>
+      <div class="concept-description">
+			<p>
+                The five main agents in the process of using the web are:
+            </p>
+            <ol>
+                <li>The user</li>
+                <li>The web browser</li>
+                <li>The internet</li>
+                <li>HTTP protocol</li>
+                <li>Servers</li>
+                
+            </ol>
+            <p>
+			<!--span tags are being used to hook CSS to keywords I want stylized for emphasis.-->
+                The <span>user</span> opens a <span>web browser</span>. The user commands the browser through an url or a search query. this data form a package which travel over the <span>internet</span> ("the world's largest computer network"). <span>HTTP</span>, an applications protocol, takes the signals and sends them to <span>servers</span> that host the content. The servers then send information back along the chain of command (through HTTP through the internet through my browser) back to the user.  To explain this concepts I have use in my classes this video: <a href="https://www.youtube.com/watch?v=2xVWW3lVhtY">  Como Funciona el Internet - Documental Audio Latino </a>.
+            </p>
+      </div>
+    </div>
+    <div class="concept" id="lesson-1-2">
+      <div class="concept-title">
+        HTML
+      </div>
+      <div class="concept-description">
+        <p>
+          HTML mean <em>Hypertext Markup Language.</em> HTML documents contain the <em>data</em> that the user view in a web page and the <em> format </em> of how the <em>data</em> is presented. This type of document contains:
+        </p>
+        <ul>
+            <li>Text content (what you see)</li>
+            <li>Markup (what it looks like)</li>
+            <li>References to other documents (e.g. images and videos)</li>
+            <li>Links to other pages</li>
+			<li>Meta Data</li>
+        </ul>
+      </div>
+    </div>
+    <div class="concept" id="lesson-1-3">
+      <div class="concept-title">
+        Tags vs. Elements vs. Attributes
+      </div>
+      <div class="concept-description">
+			  <p>
+                An <span>element</span> in HTML represents some kind of structure or semantics and generally consists of a start tag, content, and an end tag. A <span>tag</span> is used to mark up the start and end of an HTML element. A start tag consists of an opening angle bracket followed by the element name, zero or more space separated attribute/value pairs, and a closing angle bracket.  A good reference about the tags supported is <a href="https://www.w3schools.com/tags/"> w3schools.com tags  </a>.
+              </p>
+			  <p>
+			  An <span>attribute</span> defines a property for an element, consists of an attribute/value pair, and appears within the element's start tag. An element's start tag may contain any number of space separated attribute/value pairs. Also each tag support some specific attributes, <a href="https://www.w3schools.com/tags/ref_attributes.asp">  HTML Attribute Reference  </a> shows the defined attributes for html and if you give clik you will be find which <span>tags</span> support it.
+			  </p>
+      </div>
+    </div>
+    <div class="concept" id="lesson-1-4">
+      <div class="concept-title">
+        Why Computers are Stupid
+      </div>
+      <div class="concept-description">
+        <p>
+          Computers are sensitive to typos, and small mistakes such as missing an End Tag will affect the page layout! Developers must then "debug" to track and correct their mistakes. 
+        </p>
+		<p>
+          Testing and Quality of the code is an important consume a big part of developing programs or web page.
+        </p>
+      </div>
+    </div>
+    <div class="concept" id="lesson-1-5">
+      <div class="concept-title">
+        Inline vs Block Elements
+      </div>
+      <div class="concept-description">
+        <p>
+          HTML elements are either <b>inline</b>
+          or <b>block</b>. 
+        </p>
+		<p>
+		Block elements always make "enter", so create a box for the inside content. Examples of Block Elements:<em> p</em>,<em> div</em>, <em> ul</em>, <em>li</em>, and <em>h1</em>.
+		</p>
+		<p>
+		Inline elements are inline with the other elements. Examples of Inline Elements: <em>a</em>,<em> span</em>, <em>b</em> and <em>em</em> .
+		</p>
+      </div>
+    </div>
+  </div>
+  <div class="lesson">
+    <h2 id="lesson-2">Lesson 2: Creating a Structured Document with HTML</h2>
+    <div class="concept" id="lesson-2-1">
+      <div class="concept-title">
+        Concepts
+      </div>
+      <div class="concept-description">
+        <p>HTML, CSS, Javascript : 3 languages serving different purposes when developing a webpage.</p>
+
+        <p>Using the analogy of a house...
+          
+          <ul>
+            <li><em> HTML</em>: HyperText Markup Language = the standard markup language used to create web pages. HTML creates structure in a webpage (think layout of a house)  
+            <li><em> CSS</em>: Cascading Style Sheets = language used for describing the look and formatting of a webpage. CSS creates style in a webpage, such as font size, colours, thickness of borders etc (think decoration within the house).
+            <li><em> JavaScript</em> = language used to create interactive components in a webpage (think of remotes or garage doors needed to perform actions)
+		</ul>
+		<p>
+		In this section  we are going to talk about <em> HTML</em>.
+		</p>
+      </div>
+    </div>
+    <div class="concept" id="lesson-2-2">
+      <div class="concept-title">
+        Document Object Model (DOM)
+      </div>
+      <div class="concept-description">
+	  
+	  p><em>Document Object Model</em>: a cross-platform and language-independent convention for representing and interacting with objects in HTML (and other markup languages). The nodes of every document are organized in a tree structure, called the DOM tree.
+	  </p>
+        <p>
+		When programmers talk about the <em> DOM</em>, they are talking about the tree-like structure of a webpage. In a browser, this structure shows up as a series
+          of nested boxes.
+        </p>
+ 
+      </div>
+    </div>
+    <div class="concept" id="lesson-2-3">
+      <div class="concept-title">
+        The relationship between indented HTML and boxes
+      </div>
+      <div class="concept-description">
+        <p>
+		Everything on a webpage is organized in "Boxes" - or rectangular sections. This gives developers the flexibility to rearrange content easily on a webpage, and helps them "Boxify, or break down a given graphic design into various boxes. 
+        </p>
+<p>
+Each HTML "box" has 4 elements: margin, border, padding, content. With 4 components to each box, it can often be hard to get the accurate size of a box. Use two techniques to deal with sizes:
+</p>
+      
+	
+          <ol>
+           <li>Set sizes in terms of percentages rather than pixels.
+           <li>Set the box-sizing attribute to border-box for every element.
+		</ol>		
+      </div>
+    </div>
+    <div class="concept" id="lesson-2-4">
+      <div class="concept-title">
+        Developer tools
+      </div>
+      <div class="concept-description">
+              <p>
+                We can develop in notepad but there are key tools which help a lot like:
+              </p>
+              <ol>
+                <li><span>Chrome DevTools</span>: we used this to view the HTML and CSS code for live webpages. It let to test the webpage in other device like cell phones.</li>
+                <li><span>Sublime Text</span>: we used this specialized text editor to easily write code and save it on our computer</li>
+                </ol> 
+      </div>
+    </div>
+  </div>
+  <div class="lesson">
+    <h2 id="lesson-3">Lesson 3: Adding CSS Style to HTML Structure</h2>
+    <div class="concept" id="lesson-3-1">
+      <div class="concept-title">
+        What is CSS?
+      </div>
+      <div class="concept-description">
+       <p>
+                <span>CSS</span> stands for Cascading Style Sheets. CSS controls the style of the webpage. The "cascading" part means that CSS rules are applied not only to the elements they directly match (via <span>classes</span>), but also to all of those elements' child elements (i.e. <span>inheritance</span>). However, if a child element has multiple overlapping rules defined for it, the more specific rule takes effect.
+              </p>
+              <p>
+                Inheritance prevents certain properties from being declared over and over again in a style sheet. It is a fundamental building block for the <span>abstract thinking</span> portion of a programmer's thought process.
+              </p>
+      </div>
+    </div>
+    <div class="concept" id="lesson-3-2">
+      <div class="concept-title">
+        Tips
+      </div>
+      <div class="concept-description">
+              <p>
+                Avoiding repetition by leveraging CSS is important because:
+              </p> 
+              <ol>
+                <li>It saves the programmer time.</li>
+                <li>Less code needs to be written, therefore making it easier to understand when it is being reviewed.</li>
+                <li>Less risk of typos and therefore less chance of buggy code</li>
+				<li>Each line that you wirte will travel from server to client, so save lines of code mean save bandwidth.</li>
+              </ol> 
+      </div>
+    </div>
+  </div>
+</body>
