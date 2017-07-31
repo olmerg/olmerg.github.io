@@ -21,7 +21,7 @@ h2 {
 .TOC {
   display: flex;
   background-color: #c8cbcc;
-  font-family: Palatino Linotype;
+  font-family: "Palatino Linotype";
   max-width: 2000px;
   width: 90%;
   border-style: solid;
@@ -36,7 +36,7 @@ h2 {
 
 .session {
   background-color: #66cdaa;
-  font-family: Palatino Linotype;
+  font-family: "Palatino Linotype";
   border-radius: 50px;
   color: #e9fffb;
   padding: 10px;
