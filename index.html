@@ -39,7 +39,9 @@
         <link rel="stylesheet" href="style.css">
 
     </head>
-    <body>
+	<script src="assets/presentation.js"></script>
+    <script src="assets/raphael-min.js"></script>
+    <body  onLoad="presentation();">
         
         <nav class="navbar navbar-expand-md navbar-light bg-light"> <!-- fixed-top -->
             <a class="navbar-brand">OCOX-AI</a>
@@ -80,17 +82,20 @@
 
                         <section>
                             <h1><a id="input">Input Variables</a></h1>
-                            
+                            <div id="variables_input"></div>
+							<hr>
                         </section>
 
                         <section>
                             <h1><a id="output">Output Variables</a></h1>
-                          
+							<div id="variable_output"></div>
+							<hr>
                         </section>
 
                         <section>
                             <h1><a id="rules">Inference Rules</a></h1>
-                           
+                            <div id="inferences"></div>
+						   <hr>
                         </section>
 
                     </div>
@@ -102,7 +107,11 @@
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title mb-3"><a id="test">Test</a></h5>
-                                
+								<span id="input_data"></span>
+                                <input type="button" value="Calculate" onClick="document.getElementById('result').innerHTML='Result: '+fl.getResult(obj);">
+								</p>
+								<span id="result"></span>
+								<div id="draw_result"></div>
                              
                             </div>
                         </div>
@@ -125,7 +134,56 @@
                 </div>
             </div>            
         </footer>
-
+<script src="assets/fuzzy-min.js"></script>
+<script>
+	var obj = {
+		crisp_input: [150, 10, 10],
+		variables_input: [
+			{
+				name: "Distance to Target",
+				setsName: ["Close", "Medium", "Far"],
+				sets: [
+					[0,0,25,150],
+					[25,150,150,300],
+					[150,300,400,400]
+				]
+			},
+			{
+				name: "Ammo Status",
+				setsName: ["Low", "Okay", "Loads"],
+				sets: [
+					[0,0,0,10],
+					[0,10,10,30],
+					[10,30,40,40]
+				]
+			},
+			{
+				name: "Defense",
+				setsName: ["Light", "Medium", "Heavy"],
+				sets: [
+					[0,0,0,10],
+					[0,10,10,30],
+					[10,30,40,40]
+				]
+			}
+		],
+		variable_output: {
+			name: "Desirability",
+			setsName: ["Undesirable", "Desirable", "Very Desirable"],
+			sets: [
+				[0,0,25,50],
+				[25,50,50,75],
+				[50,75,100,100]
+			]
+		},
+		inferences: [
+			[0,2,0],
+			[0,1,2],
+			[2,1,0]
+		]
+	};
+	var fl = new FuzzyLogic();
+</script>
         <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     </body>
