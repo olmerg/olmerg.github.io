@@ -1,190 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-        <!-- Fill out the following metadata for SEO and use in social media (WhatsApp, Facebook, Twitter) -->
-        <title>Investment Strategies for Service Sectors Post COVID-19</title>
-        <meta property="og:title" content="Investment Strategies for Service Sectors Post COVID-19">
-
-        <meta name="description" content="Investment Strategies for Service Sectors Post COVID-19">
-        <meta property="og:description" content="Investment Strategies for Service Sectors Post COVID-19">
-        <meta name="twitter:description" content="Investment Strategies for Service Sectors Post COVID-19">
-
-        <meta property="og:url" content="">
-        <meta name="twitter:site" content="@">
-
-        <meta name="keywords" content="Fuzzy Logic, Investment, COVID-19, Digital Transformation">
-        <meta name="copyright" content="">
-        <meta name="robots" content="index,follow">
-
-        <!-- Generate your own favicons for different platforms using, e.g., https://realfavicongenerator.net/ -->
-        <link rel="icon" type="image/png" href="http://www.ocox-ai.co/uploads/1/2/6/7/126714507/ocox-logo.png" />
-
-        <!-- Adapt the following code if you want to show custom banners when sharing your website on social media -->
-        <!--
-        <meta property="og:image" content="">
-        <meta property="og:image:type" content="image/png">
-        <meta property="og:image:width" content="400">
-        <meta property="og:image:height" content="400">
-
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:image" content="">
-        -->
-
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css" />
-        <link rel="stylesheet" href="style.css">
-
-    </head>
-	<script src="assets/presentation.js"></script>
-    <script src="assets/raphael-min.js"></script>
-    <body  onLoad="presentation();">
-        
-        <nav class="navbar navbar-expand-md navbar-light bg-light"> <!-- fixed-top -->
-            <a class="navbar-brand">OCOX-AI</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item"><a class="nav-link" href="#abstract">Abstract</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#input">Inputs Variables</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#output">Output Variables</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#rules">Rules</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#test">Test</a></li>
-                    <!--li class="nav-item"><a class="nav-link" href="#presentation">Presentation Guidelines</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#accepted">Accepted Papers</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#committees">Test</a></li-->
-                </ul>
-            </div>
-        </nav>
-
-        <main>
-
-            <div class="jumbotron text-center">
-                <div class="container py-4">
-                    <h1 class="display-3 ">Investment Strategies for Service Sectors Post COVID-19</h1>                
-					</div>
-            </div>
-
-            <div class="container">
-                <div class="row">
-
-                    <div class="col-lg-8">
-                        
-                        <section>
-                            <h1><a id="abstract">Abstract</a></h1>
-                            <p>The abstract </p>
-                        </section>
-
-                        <section>
-                            <h1><a id="input">Input Variables</a></h1>
-                            <div id="variables_input"></div>
-							<hr>
-                        </section>
-
-                        <section>
-                            <h1><a id="output">Output Variables</a></h1>
-							<div id="variable_output"></div>
-							<hr>
-                        </section>
-
-                        <section>
-                            <h1><a id="rules">Inference Rules</a></h1>
-                            <div id="inferences"></div>
-						   <hr>
-                        </section>
-
-                    </div>
-                    
-                    <div class="col-lg-4 pl-lg-5">
-                        
-                      
-
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title mb-3"><a id="test">Test</a></h5>
-								<span id="input_data"></span>
-                                <input type="button" value="Calculate" onClick="document.getElementById('result').innerHTML='Result: '+fl.getResult(obj);">
-								</p>
-								<span id="result"></span>
-								<div id="draw_result"></div>
-                             
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
-
-        </main>
-
-        <footer>
-            <div class="container py-4">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <a href="https://www.ocox-ai.co" target="_blank"><img src="http://www.ocox-ai.co/uploads/1/2/6/7/126714507/ocox-logo.png" style="height:75px;"></a>
-                        <p class="mt-2">Olmerg</p>
-                    </div>
-
-                </div>
-            </div>            
-        </footer>
-<script src="assets/fuzzy-min.js"></script>
-<script>
-	var obj = {
-		crisp_input: [150, 10, 10],
-		variables_input: [
-			{
-				name: "Distance to Target",
-				setsName: ["Close", "Medium", "Far"],
-				sets: [
-					[0,0,25,150],
-					[25,150,150,300],
-					[150,300,400,400]
-				]
-			},
-			{
-				name: "Ammo Status",
-				setsName: ["Low", "Okay", "Loads"],
-				sets: [
-					[0,0,0,10],
-					[0,10,10,30],
-					[10,30,40,40]
-				]
-			},
-			{
-				name: "Defense",
-				setsName: ["Light", "Medium", "Heavy"],
-				sets: [
-					[0,0,0,10],
-					[0,10,10,30],
-					[10,30,40,40]
-				]
-			}
-		],
-		variable_output: {
-			name: "Desirability",
-			setsName: ["Undesirable", "Desirable", "Very Desirable"],
-			sets: [
-				[0,0,25,50],
-				[25,50,50,75],
-				[50,75,100,100]
-			]
-		},
-		inferences: [
-			[0,2,0],
-			[0,1,2],
-			[2,1,0]
-		]
-	};
-	var fl = new FuzzyLogic();
-</script>
-        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+    <link rel="stylesheet" href="assets/style_home.css">
+    <title>Olmer Garcia-Bedoya</title>
+</head>
+<body>
+    <div class="grid-2">
+        <div class="section-1">
+            <i class="fas fa-portrait fa-5x white"></i>
+            <h2>Olmer Garcia-Bedoya</h2>
+            <p><a href="#"><i class="fas fa-map-marked"></i></a>Bogota,Colombia.</p>
+            <a href="https://github.com/olmerg"><i class="fab fa-github"></i></a>
+			<a href="https://linkedin.com/in/olmerg"><i class="fab fa-linkedin"></i></a> 
+        </div>
+        <div class="section-2">
+            <h2>About</h2>
+            <p>.</p>
+            <h2>Projects</h2>
+            <a href="#">Project 1</a>
+            
+            <h2>Contact</h2>
+           
+		
+        </div>
+    </div>
+</body>
 </html>
