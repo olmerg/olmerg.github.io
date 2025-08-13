@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Modelo ML: Valor de Negocio</title>
+    <!-- Tailwind CSS CDN para estilos rápidos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinea al inicio para que el contenido no quede centrado verticalmente si es muy alto */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px; /* Esquinas más redondeadas */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 900px; /* Ancho máximo para el contenedor principal */
+            width: 100%;
+            margin-top: 40px; /* Margen superior para separación */
+        }
+        input[type="number"] {
+            -moz-appearance: textfield; /* Para Firefox */
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .section-title {
+            color: #3b82f6; /* Azul de Tailwind */
+        }
+        .result-box {
+            background-color: #e0f2fe; /* Azul claro de Tailwind */
+            border-left: 5px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .result-box.negative {
+            background-color: #fee2e2; /* Rojo claro de Tailwind */
+            border-left-color: #ef4444; /* Rojo de Tailwind */
+        }
+        .result-box.positive {
+            background-color: #d1fae5; /* Verde claro de Tailwind */
+            border-left-color: #10b981; /* Verde de Tailwind */
+        }
+        .result-box.net-value {
+            font-size: 1.25rem; /* Texto más grande para el valor neto */
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center">
+    <div class="container p-8 space-y-8">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">
+            Evaluación de Modelo de Machine Learning: Valor de Negocio 📈
+        </h1>
+
+        <div class="bg-blue-50 p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4 section-title">Escenario del Negocio</h2>
+            <p class="text-gray-700 leading-relaxed">
+                Una empresa de servicios de suscripción enfrenta el problema de abandono de clientes (churn). Han desarrollado un modelo de *machine learning* para predecir qué clientes tienen una alta probabilidad de irse. Para retenerlos, la empresa planea lanzar una campaña con un descuento especial. Tu tarea es evaluar la **viabilidad financiera** de este modelo y la campaña.
+            </p>
+            <div class="mt-6 p-4 bg-blue-100 rounded-lg text-blue-800">
+                <h3 class="font-bold text-lg mb-2">Valores Clave del Negocio:</h3>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>Costo de la campaña de retención:</strong> $5 por cliente contactado.</li>
+                    <li><strong>Valor de vida del cliente (LTV) retenido:</strong> $100 por cliente.</li>
+                    <li><strong>Tasa de éxito de la campaña:</strong> 25% (25% de los clientes contactados que iban a irse deciden quedarse).</li>
+                    <li><strong>Costo de la inacción (cliente que se va):</strong> Pérdida de $100 por cliente que abandona.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 section-title">Entrada de la Matriz de Confusión</h2>
+                <p class="text-gray-600 mb-6">Ingresa los valores de la matriz de confusión de tu modelo:</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="truePositives" class="block text-gray-700 text-sm font-bold mb-2">Verdaderos Positivos (VP):</label>
+                        <input type="number" id="truePositives" value="700"
+                               class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Clientes que el modelo predijo correctamente que abandonarían">
+                    </div>
+                    <div>
+                        <label for="falsePositives" class="block text-gray-700 text-sm font-bold mb-2">Falsos Positivos (FP):</label>
+                        <input type="number" id="falsePositives" value="300"
+                               class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Clientes que el modelo predijo que abandonarían pero no lo hicieron">
+                    </div>
+                    <div>
+                        <label for="falseNegatives" class="block text-gray-700 text-sm font-bold mb-2">Falsos Negativos (FN):</label>
+                        <input type="number" id="falseNegatives" value="150"
+                               class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Clientes que el modelo predijo que se quedarían pero abandonaron">
+                    </div>
+                    <div>
+                        <label for="trueNegatives" class="block text-gray-700 text-sm font-bold mb-2">Verdaderos Negativos (VN):</label>
+                        <input type="number" id="trueNegatives" value="850"
+                               class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="Clientes que el modelo predijo correctamente que se quedarían">
+                    </div>
+                </div>
+                <button id="calculateBtn"
+                        class="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">
+                    Calcular Impacto de Negocio
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 section-title">Resultados del Valor de Negocio</h2>
+                <p class="text-gray-600 mb-6">Aquí verás el impacto financiero de tu modelo:</p>
+                <div id="results" class="space-y-3">
+                    <div class="result-box positive">
+                        <p class="font-semibold">Ganancia por Clientes Retenidos: <span id="retainedGain" class="font-bold">$0</span></p>
+                    </div>
+                    <div class="result-box negative">
+                        <p class="font-semibold">Costo de la Campaña de Retención: <span id="campaignCost" class="font-bold">$0</span></p>
+                    </div>
+                    <div class="result-box negative">
+                        <p class="font-semibold">Pérdida por Clientes No Detectados: <span id="undetectedLoss" class="font-bold">$0</span></p>
+                    </div>
+                    <div class="result-box net-value" id="netValueBox">
+                        <p>Ingreso/Costo Neto del Modelo: <span id="netValue" class="font-bold">$0</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-purple-50 p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-purple-700 mb-4 section-title">Reflexiones Clave 💡</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-3">
+                <li>Analiza si el **Ingreso/Costo Neto del Modelo** es positivo o negativo. ¿Qué significa esto para la empresa?</li>
+                <li>¿Cómo se relaciona este resultado financiero con las métricas técnicas que ya conoces (precisión, *recall*, F1-score, etc.)?</li>
+                <li>Si pudieras cambiar el umbral de predicción de tu modelo (para que sea más o menos sensible a la predicción de *churn*), ¿cómo crees que afectaría a los VP, FP y FN, y, por ende, al valor neto?</li>
+                <li>¿Qué otros factores, además de los financieros, crees que la empresa debería considerar antes de implementar este modelo y campaña a gran escala?</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Obtener referencias a los elementos del DOM
+            const truePositivesInput = document.getElementById('truePositives');
+            const falsePositivesInput = document.getElementById('falsePositives');
+            const falseNegativesInput = document.getElementById('falseNegatives');
+            const calculateBtn = document.getElementById('calculateBtn');
+
+            const retainedGainSpan = document.getElementById('retainedGain');
+            const campaignCostSpan = document.getElementById('campaignCost');
+            const undetectedLossSpan = document.getElementById('undetectedLoss');
+            const netValueSpan = document.getElementById('netValue');
+            const netValueBox = document.getElementById('netValueBox');
+
+            // Función para calcular y mostrar los resultados
+            const calculateBusinessValue = () => {
+                try {
+                    // Obtener los valores de los inputs, asegurando que sean números
+                    const VP = parseInt(truePositivesInput.value) || 0;
+                    const FP = parseInt(falsePositivesInput.value) || 0;
+                    const FN = parseInt(falseNegativesInput.value) || 0;
+                    // VN no se usa directamente en los cálculos de costo-beneficio de este escenario, pero se mantiene para la matriz completa.
+
+                    // Valores de negocio definidos en el escenario
+                    const COSTO_CAMPAÑA_POR_CLIENTE = 5;
+                    const LTV_RETENIDO = 100;
+                    const TASA_EXITO_CAMPAÑA = 0.25;
+                    const COSTO_INACCION_LTV = 100;
+
+                    // Cálculos
+                    const gananciaRetenidos = VP * LTV_RETENIDO * TASA_EXITO_CAMPAÑA;
+                    const costoCampaña = (VP + FP) * COSTO_CAMPAÑA_POR_CLIENTE;
+                    const perdidaNoDetectados = FN * COSTO_INACCION_LTV;
+
+                    const ingresoCostoNeto = gananciaRetenidos - costoCampaña - perdidaNoDetectados;
+
+                    // Mostrar los resultados formateados como moneda
+                    retainedGainSpan.textContent = `$${gananciaRetenidos.toLocaleString('es-CO')}`;
+                    campaignCostSpan.textContent = `$${costoCampaña.toLocaleString('es-CO')}`;
+                    undetectedLossSpan.textContent = `$${perdidaNoDetectados.toLocaleString('es-CO')}`;
+                    netValueSpan.textContent = `$${ingresoCostoNeto.toLocaleString('es-CO')}`;
+
+                    // Cambiar el color del recuadro del valor neto según si es positivo o negativo
+                    if (ingresoCostoNeto >= 0) {
+                        netValueBox.classList.remove('negative');
+                        netValueBox.classList.add('positive');
+                    } else {
+                        netValueBox.classList.remove('positive');
+                        netValueBox.classList.add('negative');
+                    }
+
+                } catch (error) {
+                    console.error("Error en el cálculo:", error);
+                    // Aquí podrías mostrar un mensaje al usuario en la UI si lo consideras necesario.
+                    // Por simplicidad, se omite un modal de error en este ejemplo.
+                }
+            };
+
+            // Asignar el evento click al botón
+            calculateBtn.addEventListener('click', calculateBusinessValue);
+
+            // Calcular los valores iniciales al cargar la página (con los valores por defecto)
+            calculateBusinessValue();
+        });
+    </script>
+</body>
+</html>
