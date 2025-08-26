@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impacto de Errores de Regresión en Bienes Raíces</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Un azul claro muy sutil */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .dashboard-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 1400px; /* Más ancho para las tablas */
+            width: 100%;
+            margin-top: 40px;
+        }
+        .control-panel, .data-input-panel, .results-panel {
+            background-color: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #cbd5e0;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .result-box {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .result-positive {
+            background-color: #d1fae5; /* Verde claro */
+            border-left: 4px solid #10b981; /* Verde */
+        }
+        .result-negative {
+            background-color: #fee2e2; /* Rojo claro */
+            border-left: 4px solid #ef4444; /* Rojo */
+        }
+        .result-neutral {
+            background-color: #e0f2fe; /* Azul claro */
+            border-left: 4px solid #3b82f6; /* Azul */
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        th, td {
+            padding: 10px 15px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        th {
+            background-color: #e2e8f0;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        tr:nth-child(even) {
+            background-color: #f7fafc;
+        }
+        .numeric-input {
+            width: 100px; /* Ancho fijo para inputs numéricos en tabla */
+            text-align: right;
+        }
+        .summary-row {
+            font-weight: bold;
+            background-color: #cfe2f3 !important; /* Un azul un poco más oscuro para el sumario */
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="dashboard-container">
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-10">
+            Impacto de Errores de Regresión en el Negocio de Bienes Raíces 🏡
+        </h1>
+
+        <div class="bg-blue-50 p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4">Escenario: Predicción de Precios de Casas</h2>
+            <p class="text-gray-700 leading-relaxed">
+                Este tablero te permite simular cómo los errores en un modelo de predicción de precios de casas afectan financieramente a un **vendedor** y a un **comprador**. Ajusta los parámetros de negocio para ver cómo cada tipo de error (sobrestimación o subestimación) se traduce en ganancias o pérdidas.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Panel de Entrada de Datos - Ahora primero -->
+            <div class="data-input-panel">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6">Precios de las Casas</h2>
+                <div class="table-responsive">
+                    <table id="housePriceTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th class="numeric-input">Precio Real ($)</th>
+                                <th class="numeric-input">Precio Predicho ($)</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Filas se insertarán aquí por JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="addHouseBtn"
+                        class="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-md mr-2">
+                    Añadir Casa
+                </button>
+                <button id="calculateBtn"
+                        class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-md">
+                    Calcular Impacto
+                </button>
+            </div>
+
+            <!-- Panel de Controles de Negocio - Ahora segundo -->
+            <div class="control-panel">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6">Parámetros de Negocio</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Permiten simular cómo el mismo error de predicción (por ejemplo, $10.000) puede tener diferentes consecuencias financieras dependiendo de si el error es una sobrestimación o una subestimación.
+                </p>
+                <div class="space-y-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mt-4">Vendedor 🧑‍💼</h3>
+                    <div>
+                        <div class="slider-label">
+                            <label for="sellerOverpriceCost">Costo por Sobrestimación (ej. retraso de venta) (%):</label>
+                            <span id="sellerOverpriceCostValue">10%</span>
+                        </div>
+                        <input type="range" id="sellerOverpriceCost" min="0" max="100" step="1" value="10">
+                        <p class="text-sm text-gray-500">Porcentaje del error que representa un costo si el modelo predice un precio más alto de lo real (Vendedor podría sobrevalorar y perder tiempo/interés).</p>
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="sellerLostRevenue">Pérdida por Subestimación (ej. precio bajo) (%):</label>
+                            <span id="sellerLostRevenueValue">100%</span>
+                        </div>
+                        <input type="range" id="sellerLostRevenue" min="0" max="200" step="1" value="100">
+                        <p class="text-sm text-gray-500">Porcentaje del error que representa una pérdida si el modelo predice un precio más bajo de lo real (Vendedor vende barato).</p>
+                    </div>
+
+                    <h3 class="text-xl font-semibold text-gray-800 mt-6">Comprador 🛍️</h3>
+                    <div>
+                        <div class="slider-label">
+                            <label for="buyerSavingsFactor">Ahorro Percibido por Sobrestimación (%):</label>
+                            <span id="buyerSavingsFactorValue">80%</span>
+                        </div>
+                        <input type="range" id="buyerSavingsFactor" min="0" max="150" step="1" value="80">
+                        <p class="text-sm text-gray-500">Porcentaje del error que representa un "ahorro" si el modelo predice un precio más alto de lo real (Comprador encuentra una "ganga" respecto a lo esperado).</p>
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="buyerOverpayCost">Costo por Sobrepagar por Subestimación (%):</label>
+                            <span id="buyerOverpayCostValue">100%</span>
+                        </div>
+                        <input type="range" id="buyerOverpayCost" min="0" max="200" step="1" value="100">
+                        <p class="text-sm text-gray-500">Porcentaje del error que representa un costo si el modelo predice un precio más bajo de lo real (Comprador podría pagar de más).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Resultados -->
+        <div class="results-panel mt-8">
+            <h2 class="text-2xl font-bold text-gray-700 mb-6">Resultados del Análisis</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="result-box result-neutral">
+                    <p class="font-semibold text-gray-700">MAE (Error Absoluto Medio): <span id="maeResult" class="font-bold text-lg">$0.00</span></p>
+                </div>
+                <div class="result-box result-neutral">
+                    <p class="font-semibold text-gray-700">MSE (Error Cuadrático Medio): <span id="mseResult" class="font-bold text-lg">$0.00</span></p>
+                </div>
+                <div class="result-box result-neutral">
+                    <p class="font-semibold text-gray-700">R² (Coeficiente de Determinación): <span id="r2Result" class="font-bold text-lg">0.00</span></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Impacto para el Vendedor -->
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Impacto Financiero para el Vendedor 💸</h3>
+                    <div class="table-responsive">
+                        <table id="sellerImpactTable">
+                            <thead>
+                                <tr>
+                                    <th># Casa</th>
+                                    <th>Precio Real ($)</th>
+                                    <th>Precio Predicho ($)</th>
+                                    <th>Error ($)</th>
+                                    <th>Impacto Vendedor ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Impacto por casa se insertará aquí -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="summary-row">
+                                    <td colspan="4" class="text-right">Total Impacto Vendedor:</td>
+                                    <td id="totalSellerImpact">$0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Impacto para el Comprador -->
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Impacto Financiero para el Comprador 💰</h3>
+                    <div class="table-responsive">
+                        <table id="buyerImpactTable">
+                            <thead>
+                                <tr>
+                                    <th># Casa</th>
+                                    <th>Precio Real ($)</th>
+                                    <th>Precio Predicho ($)</th>
+                                    <th>Error ($)</th>
+                                    <th>Impacto Comprador ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Impacto por casa se insertará aquí -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="summary-row">
+                                    <td colspan="4" class="text-right">Total Impacto Comprador:</td>
+                                    <td id="totalBuyerImpact">$0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- Referencias del DOM ---
+        const housePriceTableBody = document.querySelector('#housePriceTable tbody');
+        const addHouseBtn = document.getElementById('addHouseBtn');
+        const calculateBtn = document.getElementById('calculateBtn');
+
+        const sellerOverpriceCostSlider = document.getElementById('sellerOverpriceCost');
+        const sellerLostRevenueSlider = document.getElementById('sellerLostRevenue');
+        const buyerSavingsFactorSlider = document.getElementById('buyerSavingsFactor');
+        const buyerOverpayCostSlider = document.getElementById('buyerOverpayCost');
+
+        const sellerOverpriceCostValueSpan = document.getElementById('sellerOverpriceCostValue');
+        const sellerLostRevenueValueSpan = document.getElementById('sellerLostRevenueValue');
+        const buyerSavingsFactorValueSpan = document.getElementById('buyerSavingsFactorValue');
+        const buyerOverpayCostValueSpan = document.getElementById('buyerOverpayCostValue');
+
+        const maeResultSpan = document.getElementById('maeResult');
+        const mseResultSpan = document.getElementById('mseResult');
+        const r2ResultSpan = document.getElementById('r2Result');
+
+        const sellerImpactTableBody = document.querySelector('#sellerImpactTable tbody');
+        const totalSellerImpactSpan = document.getElementById('totalSellerImpact');
+        const buyerImpactTableBody = document.querySelector('#buyerImpactTable tbody');
+        const totalBuyerImpactSpan = document.getElementById('totalBuyerImpact');
+
+        let houseCounter = 0; // Para asignar IDs únicos a las casas
+
+        // --- Funciones de Métricas de Regresión ---
+        const meanAbsoluteError = (y_true, y_pred) => {
+            if (y_true.length === 0) return 0;
+            let sum = 0;
+            for (let i = 0; i < y_true.length; i++) {
+                sum += Math.abs(y_true[i] - y_pred[i]);
+            }
+            return sum / y_true.length;
+        };
+
+        const meanSquaredError = (y_true, y_pred) => {
+            if (y_true.length === 0) return 0;
+            let sum = 0;
+            for (let i = 0; i < y_true.length; i++) {
+                sum += Math.pow(y_true[i] - y_pred[i], 2);
+            }
+            return sum / y_true.length;
+        };
+
+        const r2Score = (y_true, y_pred) => {
+            const n = y_true.length;
+            if (n === 0) return 0;
+            const y_mean = y_true.reduce((a, b) => a + b, 0) / n;
+            let ss_total = 0;
+            let ss_residual = 0;
+
+            for (let i = 0; i < n; i++) {
+                ss_total += Math.pow(y_true[i] - y_mean, 2);
+                ss_residual += Math.pow(y_true[i] - y_pred[i], 2);
+            }
+
+            if (ss_total === 0) return 1; // Si todos los y_true son iguales, R^2 es 1 si las predicciones son iguales
+            return 1 - (ss_residual / ss_total);
+        };
+
+        // --- Funciones de Gestión de Filas de Casas ---
+        const addHouseRow = (realPrice = '', predictedPrice = '') => {
+            houseCounter++;
+            const row = housePriceTableBody.insertRow();
+            row.id = `house-${houseCounter}`;
+            row.innerHTML = `
+                <td>${houseCounter}</td>
+                <td><input type="number" class="w-full p-2 border rounded-lg numeric-input" value="${realPrice}" data-type="real" placeholder="Ej: 300000"></td>
+                <td><input type="number" class="w-full p-2 border rounded-lg numeric-input" value="${predictedPrice}" data-type="predicted" placeholder="Ej: 295000"></td>
+                <td><button class="remove-house-btn bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md transition duration-200">Eliminar</button></td>
+            `;
+            // Añadir listener al botón de eliminar
+            row.querySelector('.remove-house-btn').addEventListener('click', () => {
+                row.remove();
+                calculateImpact(); // Recalcular al eliminar
+            });
+            // Añadir listeners para recalcular al cambiar inputs
+            row.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', calculateImpact);
+            });
+        };
+
+        // --- Función Principal de Cálculo ---
+        const calculateImpact = () => {
+            const realPrices = [];
+            const predictedPrices = [];
+            const houseRows = housePriceTableBody.querySelectorAll('tr');
+
+            houseRows.forEach(row => {
+                const realInput = row.querySelector('input[data-type="real"]');
+                const predictedInput = row.querySelector('input[data-type="predicted"]');
+                const real = parseFloat(realInput.value);
+                const predicted = parseFloat(predictedInput.value);
+
+                if (!isNaN(real) && !isNaN(predicted)) {
+                    realPrices.push(real);
+                    predictedPrices.push(predicted);
+                }
+            });
+
+            // Actualizar métricas de regresión
+            maeResultSpan.textContent = `$${meanAbsoluteError(realPrices, predictedPrices).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            mseResultSpan.textContent = `$${meanSquaredError(realPrices, predictedPrices).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            r2ResultSpan.textContent = r2Score(realPrices, predictedPrices).toFixed(2);
+
+            // Obtener factores de negocio (ahora se dividen por 100 para usarlos como porcentajes)
+            const sellerOverpriceCostFactor = parseFloat(sellerOverpriceCostSlider.value) / 100;
+            const sellerLostRevenueFactor = parseFloat(sellerLostRevenueSlider.value) / 100;
+            const buyerSavingsFactor = parseFloat(buyerSavingsFactorSlider.value) / 100;
+            const buyerOverpayCostFactor = parseFloat(buyerOverpayCostSlider.value) / 100;
+
+            let totalSellerImpact = 0;
+            let totalBuyerImpact = 0;
+
+            // Limpiar tablas de impacto
+            sellerImpactTableBody.innerHTML = '';
+            buyerImpactTableBody.innerHTML = '';
+
+            realPrices.forEach((real, index) => {
+                const predicted = predictedPrices[index];
+                const error = predicted - real; // Positivo si sobrestimado, Negativo si subestimado
+
+                let sellerImpact = 0;
+                let buyerImpact = 0;
+                let impactClassSeller = 'result-neutral';
+                let impactClassBuyer = 'result-neutral';
+
+                // --- Cálculo para el Vendedor ---
+                if (error > 0) { // Modelo sobrestima (predicho > real)
+                    // Vendedor podría sobrevalorar el inmueble -> costo de oportunidad / retraso en venta
+                    sellerImpact = -Math.abs(error) * sellerOverpriceCostFactor;
+                    impactClassSeller = 'result-negative';
+                } else if (error < 0) { // Modelo subestima (predicho < real)
+                    // Vendedor podría subvalorar el inmueble -> pérdida de ingresos potenciales
+                    sellerImpact = -Math.abs(error) * sellerLostRevenueFactor;
+                    impactClassSeller = 'result-negative';
+                }
+                totalSellerImpact += sellerImpact;
+
+                // --- Cálculo para el Comprador ---
+                if (error > 0) { // Modelo sobrestima (predicho > real)
+                    // Comprador "percibe" un ahorro porque el precio real es menor que el predicho
+                    buyerImpact = Math.abs(error) * buyerSavingsFactor;
+                    impactClassBuyer = 'result-positive';
+                } else if (error < 0) { // Modelo subestima (predicho < real)
+                    // Comprador podría "sobrepagar" si confía en la predicción baja y el precio real es mayor
+                    buyerImpact = -Math.abs(error) * buyerOverpayCostFactor;
+                    impactClassBuyer = 'result-negative';
+                }
+                totalBuyerImpact += buyerImpact;
+
+                // Añadir fila a tabla de impacto Vendedor
+                const sellerRow = sellerImpactTableBody.insertRow();
+                sellerRow.className = impactClassSeller;
+                sellerRow.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>$${real.toLocaleString('es-CO')}</td>
+                    <td>$${predicted.toLocaleString('es-CO')}</td>
+                    <td>$${error.toLocaleString('es-CO')}</td>
+                    <td>$${sellerImpact.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                `;
+
+                // Añadir fila a tabla de impacto Comprador
+                const buyerRow = buyerImpactTableBody.insertRow();
+                buyerRow.className = impactClassBuyer;
+                buyerRow.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>$${real.toLocaleString('es-CO')}</td>
+                    <td>$${predicted.toLocaleString('es-CO')}</td>
+                    <td>$${error.toLocaleString('es-CO')}</td>
+                    <td>$${buyerImpact.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                `;
+            });
+
+            totalSellerImpactSpan.textContent = `$${totalSellerImpact.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            totalBuyerImpactSpan.textContent = `$${totalBuyerImpact.toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            // Colorear el total del impacto
+            totalSellerImpactSpan.closest('tr').className = totalSellerImpact >= 0 ? 'summary-row result-positive' : 'summary-row result-negative';
+            totalBuyerImpactSpan.closest('tr').className = totalBuyerImpact >= 0 ? 'summary-row result-positive' : 'summary-row result-negative';
+        };
+
+        // --- Event Listeners ---
+        addHouseBtn.addEventListener('click', () => addHouseRow());
+        calculateBtn.addEventListener('click', calculateImpact); // También se activa por los inputs de los sliders
+
+        // Sliders para actualizar los valores mostrados y recalcular el impacto
+        sellerOverpriceCostSlider.addEventListener('input', () => {
+            sellerOverpriceCostValueSpan.textContent = parseFloat(sellerOverpriceCostSlider.value).toFixed(0) + '%';
+            calculateImpact();
+        });
+        sellerLostRevenueSlider.addEventListener('input', () => {
+            sellerLostRevenueValueSpan.textContent = parseFloat(sellerLostRevenueSlider.value).toFixed(0) + '%';
+            calculateImpact();
+        });
+        buyerSavingsFactorSlider.addEventListener('input', () => {
+            buyerSavingsFactorValueSpan.textContent = parseFloat(buyerSavingsFactorSlider.value).toFixed(0) + '%';
+            calculateImpact();
+        });
+        buyerOverpayCostSlider.addEventListener('input', () => {
+            buyerOverpayCostValueSpan.textContent = parseFloat(buyerOverpayCostSlider.value).toFixed(0) + '%';
+            calculateImpact();
+        });
+
+        // Inicialización con casas de ejemplo
+        window.onload = function() {
+            addHouseRow(300000, 310000); // Sobrestimación
+            addHouseRow(250000, 230000); // Subestimación
+            addHouseRow(400000, 405000); // Ligera sobrestimación
+            addHouseRow(350000, 340000); // Ligera subestimación
+            calculateImpact(); // Calcular por primera vez con los datos iniciales
+        };
+    </script>
+</body>
+</html>
