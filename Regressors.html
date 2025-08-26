@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Interactivo de Regresores</title>
+    <!-- Tailwind CSS CDN para estilos rápidos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un azul claro muy sutil */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .dashboard-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 1200px; /* Un poco más ancho para el dashboard */
+            width: 100%;
+            margin-top: 40px;
+        }
+        canvas {
+            background-color: #f8fafc; /* Fondo blanco azulado para el canvas */
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .control-panel, .model-results {
+            background-color: #f8fafc; /* Fondo blanco azulado similar al canvas */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #cbd5e0;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .regressor-result {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #eff6ff; /* Azul muy claro */
+            border-left: 4px solid #3b82f6; /* Borde azul */
+        }
+        .regressor-result h3 {
+            font-weight: 600;
+            color: #2563eb; /* Azul más oscuro */
+        }
+        .regressor-result p {
+            font-size: 0.95rem;
+            color: #4a5568;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .legend-color-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            margin-right: 8px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="dashboard-container">
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-10">
+            Comparando Regresores: Lasso, Ridge y RANSAC 📊
+        </h1>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Panel de Controles -->
+            <div class="control-panel lg:col-span-1">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6">Controles de Datos</h2>
+                <div class="space-y-6">
+                    <div>
+                        <div class="slider-label">
+                            <label for="numPoints">Número de Puntos:</label>
+                            <span id="numPointsValue">100</span>
+                        </div>
+                        <input type="range" id="numPoints" min="50" max="1000" value="100">
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="noiseLevel">Nivel de Ruido:</label>
+                            <span id="noiseLevelValue">0.5</span>
+                        </div>
+                        <input type="range" id="noiseLevel" min="0" max="5" step="0.1" value="0.5">
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="outlierRatio">Proporción de Outliers:</label>
+                            <span id="outlierRatioValue">0.1</span>
+                        </div>
+                        <input type="range" id="outlierRatio" min="0" max="0.5" step="0.01" value="0.1">
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="outlierMagnitude">Magnitud de Outliers:</label>
+                            <span id="outlierMagnitudeValue">50</span>
+                        </div>
+                        <input type="range" id="outlierMagnitude" min="10" max="200" value="50">
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="lassoAlpha">Alpha (Lasso):</label>
+                            <span id="lassoAlphaValue">0.1</span>
+                        </div>
+                        <input type="range" id="lassoAlpha" min="0.01" max="10" step="0.01" value="0.1">
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="ridgeAlpha">Alpha (Ridge):</label>
+                            <span id="ridgeAlphaValue">1.0</span>
+                        </div>
+                        <input type="range" id="ridgeAlpha" min="0.01" max="100" step="0.01" value="1.0">
+                    </div>
+                </div>
+                <button id="generateDataBtn"
+                        class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-md">
+                    Generar Nuevos Datos y Re-entrenar
+                </button>
+            </div>
+
+            <!-- Área de Visualización (Canvas) -->
+            <div class="lg:col-span-2 flex flex-col justify-center items-center p-4">
+                <canvas id="regressionCanvas" width="700" height="500" class="w-full h-auto max-h-[500px]"></canvas>
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg shadow-inner flex flex-wrap justify-center gap-4">
+                    <div class="legend-item"><div class="legend-color-box" style="background-color: black;"></div>Línea Verdadera</div>
+                    <div class="legend-item"><div class="legend-color-box" style="background-color: #3b82f6;"></div>OLS</div>
+                    <div class="legend-item"><div class="legend-color-box" style="background-color: #10b981;"></div>Ridge</div>
+                    <div class="legend-item"><div class="legend-color-box" style="background-color: #ef4444;"></div>Lasso</div>
+                    <div class="legend-item"><div class="legend-color-box" style="background-color: #f59e0b;"></div>RANSAC</div>
+                    <div class="legend-item"><div class="legend-color-box" style="background-color: #f59e0b;"></div>Outliers</div>
+                    <div class="legend-item"><div class="legend-color-box" style="background-color: #3b82f6;"></div>Inliers</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados de los Modelos -->
+        <div class="model-results mt-8">
+            <h2 class="text-2xl font-bold text-gray-700 mb-6">Resultados de los Modelos</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Regresor Lineal Simple (para referencia) -->
+                <div class="regressor-result border-blue-500">
+                    <h3 class="text-blue-700">Regresión Lineal Simple (OLS)</h3>
+                    <p>Ecuación: <span id="olsEquation">y = 0x + 0</span></p>
+                    <p>R²: <span id="olsR2">0.00</span></p>
+                    <p>MAE: <span id="olsMAE">0.00</span></p>
+                </div>
+                <!-- Regresor Ridge -->
+                <div class="regressor-result border-green-500">
+                    <h3 class="text-green-700">Regresión Ridge</h3>
+                    <p>Ecuación: <span id="ridgeEquation">y = 0x + 0</span></p>
+                    <p>R²: <span id="ridgeR2">0.00</span></p>
+                    <p>MAE: <span id="ridgeMAE">0.00</span></p>
+                </div>
+                <!-- Regresor Lasso -->
+                <div class="regressor-result border-red-500">
+                    <h3 class="text-red-700">Regresión Lasso</h3>
+                    <p>Ecuación: <span id="lassoEquation">y = 0x + 0</span></p>
+                    <p>R²: <span id="lassoR2">0.00</span></p>
+                    <p>MAE: <span id="lassoMAE">0.00</span></p>
+                </div>
+                 <!-- Regresor RANSAC -->
+                 <div class="regressor-result border-yellow-500">
+                    <h3 class="text-yellow-700">Regresión RANSAC</h3>
+                    <p>Ecuación: <span id="ransacEquation">y = 0x + 0</span></p>
+                    <p>R²: <span id="ransacR2">0.00</span></p>
+                    <p>MAE: <span id="ransacMAE">0.00</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importar las clases de scikit-learn necesarias de forma simulada
+        // En un entorno real, esto se haría en un backend o usando un polyfill/librería como jsm-sklearn
+        // Para este entorno de Canvas, simularemos las funciones clave de Scikit-learn.
+        class LinearRegression {
+            constructor() {
+                this.coef_ = [0];
+                this.intercept_ = 0;
+            }
+            fit(X, y) {
+                // Implementación simple de OLS (Mínimos Cuadrados Ordinarios)
+                if (X.length === 0) return;
+
+                const n = X.length;
+                let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+
+                for (let i = 0; i < n; i++) {
+                    const xi = X[i][0];
+                    const yi = y[i];
+                    sumX += xi;
+                    sumY += yi;
+                    sumXY += xi * yi;
+                    sumXX += xi * xi;
+                }
+
+                const denominator = (n * sumXX - sumX * sumX);
+                if (denominator === 0) { // Evitar división por cero si todos los X son iguales
+                    this.coef_ = [0];
+                    this.intercept_ = sumY / n; // Simplemente la media de Y
+                    return;
+                }
+
+                this.coef_[0] = (n * sumXY - sumX * sumY) / denominator;
+                this.intercept_ = (sumY - this.coef_[0] * sumX) / n;
+            }
+            predict(X) {
+                return X.map(xi => this.coef_[0] * xi[0] + this.intercept_);
+            }
+        }
+
+        class Ridge extends LinearRegression {
+            constructor(alpha = 1.0) {
+                super();
+                this.alpha = alpha;
+            }
+
+            fit(X, y) {
+                if (X.length === 0) return;
+
+                // Primero, una estimación OLS
+                super.fit(X, y);
+
+                // Simulación del efecto de Ridge: reducir los coeficientes hacia cero pero sin hacerlos cero.
+                // Cuanto mayor sea alpha, mayor la reducción.
+                const shrinkage_factor = 1 / (1 + this.alpha * 0.1); // El 0.1 es un factor de escala para alpha
+                this.coef_[0] *= shrinkage_factor;
+                // El intercepto generalmente no se regulariza en Ridge
+            }
+        }
+
+        class Lasso extends LinearRegression {
+            constructor(alpha = 1.0) {
+                super();
+                this.alpha = alpha;
+            }
+
+            fit(X, y) {
+                if (X.length === 0) return;
+
+                // Primero, una estimación OLS
+                super.fit(X, y);
+
+                // Simulación del efecto de Lasso: llevar coeficientes a cero o reducirlos.
+                // Usa un "soft thresholding" simplificado
+                const threshold = this.alpha * 0.05; // Ajustar este factor para ver el efecto
+                if (Math.abs(this.coef_[0]) < threshold) {
+                    this.coef_[0] = 0; // Se hace cero
+                } else {
+                    this.coef_[0] = this.coef_[0] - Math.sign(this.coef_[0]) * threshold; // Reducción
+                }
+                // El intercepto generalmente no se regulariza en Lasso
+            }
+        }
+
+        class RANSACRegressor {
+            constructor(min_samples = 2, residual_threshold = 5, max_trials = 100) {
+                this.min_samples = min_samples;
+                this.residual_threshold = residual_threshold;
+                this.max_trials = max_trials;
+                this.estimator = new LinearRegression(); // Usamos OLS como estimador base
+                this.coef_ = [0];
+                this.intercept_ = 0;
+            }
+
+            fit(X, y) {
+                if (X.length < this.min_samples) {
+                    this.coef_ = [0];
+                    this.intercept_ = y.length > 0 ? y.reduce((a, b) => a + b) / y.length : 0;
+                    return;
+                }
+
+                let best_inlier_count = -1;
+                let best_model = null;
+
+                for (let i = 0; i < this.max_trials; i++) {
+                    // 1. Seleccionar un subconjunto aleatorio de datos
+                    const random_indices = [];
+                    while (random_indices.length < this.min_samples) {
+                        const idx = Math.floor(Math.random() * X.length);
+                        if (!random_indices.includes(idx)) {
+                            random_indices.push(idx);
+                        }
+                    }
+
+                    const X_subset = random_indices.map(idx => X[idx]);
+                    const y_subset = random_indices.map(idx => y[idx]);
+
+                    // 2. Entrenar el modelo con el subconjunto
+                    const current_estimator = new LinearRegression();
+                    current_estimator.fit(X_subset, y_subset);
+
+                    // 3. Identificar inliers
+                    const predictions = current_estimator.predict(X);
+                    let inliers_X = [];
+                    let inliers_y = [];
+                    let current_inlier_count = 0;
+
+                    for (let j = 0; j < X.length; j++) {
+                        const residual = Math.abs(y[j] - predictions[j]);
+                        if (residual < this.residual_threshold) {
+                            inliers_X.push(X[j]);
+                            inliers_y.push(y[j]);
+                            current_inlier_count++;
+                        }
+                    }
+
+                    // 4. Actualizar el mejor modelo si hay más inliers
+                    if (current_inlier_count > best_inlier_count) {
+                        best_inlier_count = current_inlier_count;
+                        best_model = current_estimator;
+                        // Opcional: Reentrenar el mejor modelo con todos los inliers encontrados
+                        if (inliers_X.length >= this.min_samples) { // Asegurarse de tener suficientes inliers para reentrenar
+                            best_model = new LinearRegression();
+                            best_model.fit(inliers_X, inliers_y);
+                        }
+                    }
+                }
+
+                if (best_model) {
+                    this.coef_ = best_model.coef_;
+                    this.intercept_ = best_model.intercept_;
+                } else {
+                    // Si no se encontró ningún buen modelo, usar la regresión lineal simple por defecto
+                    this.estimator.fit(X, y);
+                    this.coef_ = this.estimator.coef_;
+                    this.intercept_ = this.estimator.intercept_;
+                }
+            }
+
+            predict(X) {
+                return X.map(xi => this.coef_[0] * xi[0] + this.intercept_);
+            }
+        }
+
+        // --- Funciones de Métricas ---
+        const meanAbsoluteError = (y_true, y_pred) => {
+            let sum = 0;
+            for (let i = 0; i < y_true.length; i++) {
+                sum += Math.abs(y_true[i] - y_pred[i]);
+            }
+            return sum / y_true.length;
+        };
+
+        const r2Score = (y_true, y_pred) => {
+            const n = y_true.length;
+            if (n === 0) return 0;
+
+            const y_mean = y_true.reduce((a, b) => a + b, 0) / n;
+            let ss_total = 0;
+            let ss_residual = 0;
+
+            for (let i = 0; i < n; i++) {
+                ss_total += Math.pow(y_true[i] - y_mean, 2);
+                ss_residual += Math.pow(y_true[i] - y_pred[i], 2);
+            }
+
+            if (ss_total === 0) return 1; // Si todos los y_true son iguales, R^2 es 1 si las predicciones son iguales
+            return 1 - (ss_residual / ss_total);
+        };
+
+
+        // --- Configuración del Canvas ---
+        const canvas = document.getElementById('regressionCanvas');
+        const ctx = canvas.getContext('2d');
+        let xScale, yScale; // Para mapear datos a coordenadas del canvas
+
+        // --- Elementos del DOM ---
+        const numPointsSlider = document.getElementById('numPoints');
+        const noiseLevelSlider = document.getElementById('noiseLevel');
+        const outlierRatioSlider = document.getElementById('outlierRatio');
+        const outlierMagnitudeSlider = document.getElementById('outlierMagnitude');
+        const lassoAlphaSlider = document.getElementById('lassoAlpha');
+        const ridgeAlphaSlider = document.getElementById('ridgeAlpha');
+        const generateDataBtn = document.getElementById('generateDataBtn');
+
+        const numPointsValue = document.getElementById('numPointsValue');
+        const noiseLevelValue = document.getElementById('noiseLevelValue');
+        const outlierRatioValue = document.getElementById('outlierRatioValue');
+        const outlierMagnitudeValue = document.getElementById('outlierMagnitudeValue');
+        const lassoAlphaValue = document.getElementById('lassoAlphaValue');
+        const ridgeAlphaValue = document.getElementById('ridgeAlphaValue');
+
+        const olsEquationSpan = document.getElementById('olsEquation');
+        const olsR2Span = document.getElementById('olsR2');
+        const olsMAESpan = document.getElementById('olsMAE');
+
+        const ridgeEquationSpan = document.getElementById('ridgeEquation');
+        const ridgeR2Span = document.getElementById('ridgeR2');
+        const ridgeMAESpan = document.getElementById('ridgeMAE');
+
+        const lassoEquationSpan = document.getElementById('lassoEquation');
+        const lassoR2Span = document.getElementById('lassoR2');
+        const lassoMAESpan = document.getElementById('lassoMAE');
+
+        const ransacEquationSpan = document.getElementById('ransacEquation');
+        const ransacR2Span = document.getElementById('ransacR2');
+        const ransacMAESpan = document.getElementById('ransacMAE');
+
+
+        // --- Datos Globales ---
+        let X_data = [];
+        let y_data = [];
+        const true_m = 2; // Pendiente real
+        const true_b = 5; // Intercepto real
+
+        // --- Funciones de Dibujo ---
+        const drawPoint = (x, y, color = 'blue', size = 3) => {
+            const canvasX = xScale(x);
+            const canvasY = yScale(y);
+            ctx.beginPath();
+            ctx.arc(canvasX, canvasY, size, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        };
+
+        const drawLine = (model, color = 'red', lineWidth = 2) => {
+            const xMin = -10; // Rango de x para dibujar la línea
+            const xMax = 10;
+
+            const y1 = model.coef_[0] * xMin + model.intercept_;
+            const y2 = model.coef_[0] * xMax + model.intercept_;
+
+            ctx.beginPath();
+            ctx.moveTo(xScale(xMin), yScale(y1));
+            ctx.lineTo(xScale(xMax), yScale(y2));
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        };
+
+        const drawTrueLine = (color = 'black', lineWidth = 2) => {
+            const xMin = -10;
+            const xMax = 10;
+            const y1 = true_m * xMin + true_b;
+            const y2 = true_m * xMax + true_b;
+
+            ctx.beginPath();
+            ctx.moveTo(xScale(xMin), yScale(y1));
+            ctx.lineTo(xScale(xMax), yScale(y2));
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.setLineDash([5, 5]); // Línea punteada
+            ctx.stroke();
+            ctx.setLineDash([]); // Resetear a línea sólida
+        };
+
+        const drawAxis = (xMin, xMax, yMin, yMax) => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar canvas
+
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.lineWidth = 1;
+
+            // Eje X
+            ctx.beginPath();
+            ctx.moveTo(xScale(xMin), yScale(0));
+            ctx.lineTo(xScale(xMax), yScale(0));
+            ctx.stroke();
+
+            // Eje Y
+            ctx.beginPath();
+            ctx.moveTo(xScale(0), yScale(yMin));
+            ctx.lineTo(xScale(0), yScale(yMax));
+            ctx.stroke();
+
+            // Etiquetas de los ejes
+            ctx.fillStyle = '#4a5568';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('X', canvas.width - 15, yScale(0) + 5);
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Y', xScale(0) - 5, 15);
+
+            // Ticks en los ejes
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            for (let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+                if (i !== 0) {
+                    ctx.fillText(i.toString(), xScale(i), yScale(0) + 5);
+                    ctx.beginPath();
+                    ctx.moveTo(xScale(i), yScale(0) - 3);
+                    ctx.lineTo(xScale(i), yScale(0) + 3);
+                    ctx.stroke();
+                }
+            }
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i += 10) { // Saltos de 10 en el eje Y
+                if (i !== 0) {
+                    ctx.fillText(i.toString(), xScale(0) - 5, yScale(i));
+                    ctx.beginPath();
+                    ctx.moveTo(xScale(0) - 3, yScale(i));
+                    ctx.lineTo(xScale(0) + 3, yScale(i));
+                    ctx.stroke();
+                }
+            }
+        };
+
+
+        // --- Generación de Datos ---
+        const generateData = () => {
+            const numPoints = parseInt(numPointsSlider.value);
+            const noiseLevel = parseFloat(noiseLevelSlider.value);
+            const outlierRatio = parseFloat(outlierRatioSlider.value);
+            const outlierMagnitude = parseFloat(outlierMagnitudeSlider.value);
+
+            X_data = [];
+            y_data = [];
+
+            const numOutliers = Math.floor(numPoints * outlierRatio);
+
+            for (let i = 0; i < numPoints; i++) {
+                const x = (Math.random() * 20) - 10; // X entre -10 y 10
+                let y = true_m * x + true_b + (Math.random() - 0.5) * noiseLevel * 20; // Y con ruido
+
+                // Añadir outliers
+                if (i < numOutliers) {
+                    // Generar outliers que se desvían significativamente
+                    y += (Math.random() > 0.5 ? 1 : -1) * (outlierMagnitude + Math.random() * outlierMagnitude);
+                    // Opcional: concentrar outliers en una región específica para mayor impacto
+                    // if (x > 5) y += outlierMagnitude * 2;
+                }
+
+                X_data.push([x]);
+                y_data.push(y);
+            }
+
+            // Determinar los rangos para el escalado del canvas
+            const allX = X_data.map(d => d[0]);
+            const allY = y_data;
+
+            const minX = Math.min(...allX);
+            const maxX = Math.max(...allX);
+            const minY = Math.min(...allY);
+            const maxY = Math.max(...allY);
+
+            // Expandir un poco el rango para que los puntos extremos no queden en el borde
+            const xRange = maxX - minX;
+            const yRange = maxY - minY;
+            const extendedMinX = minX - xRange * 0.1;
+            const extendedMaxX = maxX + xRange * 0.1;
+            const extendedMinY = minY - yRange * 0.1;
+            const extendedMaxY = maxY + yRange * 0.1;
+
+
+            const padding = 20; // Padding en píxeles para el canvas
+            xScale = (val) => ((val - extendedMinX) / (extendedMaxX - extendedMinX)) * (canvas.width - 2 * padding) + padding;
+            yScale = (val) => canvas.height - (((val - extendedMinY) / (extendedMaxY - extendedMinY)) * (canvas.height - 2 * padding) + padding);
+
+            drawAxis(extendedMinX, extendedMaxX, extendedMinY, extendedMaxY); // Dibujar ejes con los nuevos rangos
+        };
+
+        // --- Entrenamiento y Dibujo de Modelos ---
+        const trainAndDrawModels = () => {
+            // Limpiar solo los puntos y líneas, no el fondo y ejes
+            drawAxis(Math.min(...X_data.map(d => d[0])), Math.max(...X_data.map(d => d[0])), Math.min(...y_data), Math.max(...y_data));
+
+            // Dibujar línea verdadera (modelo generador de datos)
+            drawTrueLine();
+
+            // Dibujar puntos de datos
+            for (let i = 0; i < X_data.length; i++) {
+                const x = X_data[i][0];
+                const y = y_data[i];
+                drawPoint(x, y, (i < Math.floor(X_data.length * parseFloat(outlierRatioSlider.value)) ? '#f59e0b' : '#3b82f6'), 4); // Outliers en naranja, inliers en azul
+            }
+
+            // Regresión Lineal Simple (OLS)
+            const olsModel = new LinearRegression();
+            olsModel.fit(X_data, y_data);
+            const olsPredictions = olsModel.predict(X_data);
+            olsEquationSpan.textContent = `y = ${olsModel.coef_[0].toFixed(2)}x + ${olsModel.intercept_.toFixed(2)}`;
+            olsR2Span.textContent = r2Score(y_data, olsPredictions).toFixed(2);
+            olsMAESpan.textContent = meanAbsoluteError(y_data, olsPredictions).toFixed(2);
+            drawLine(olsModel, '#3b82f6', 2); // Azul
+
+            // Regresión Ridge
+            const ridgeModel = new Ridge(parseFloat(ridgeAlphaSlider.value));
+            ridgeModel.fit(X_data, y_data);
+            const ridgePredictions = ridgeModel.predict(X_data);
+            ridgeEquationSpan.textContent = `y = ${ridgeModel.coef_[0].toFixed(2)}x + ${ridgeModel.intercept_.toFixed(2)}`;
+            ridgeR2Span.textContent = r2Score(y_data, ridgePredictions).toFixed(2);
+            ridgeMAESpan.textContent = meanAbsoluteError(y_data, ridgePredictions).toFixed(2);
+            drawLine(ridgeModel, '#10b981', 2); // Verde
+
+            // Regresión Lasso
+            const lassoModel = new Lasso(parseFloat(lassoAlphaSlider.value));
+            lassoModel.fit(X_data, y_data);
+            const lassoPredictions = lassoModel.predict(X_data);
+            lassoEquationSpan.textContent = `y = ${lassoModel.coef_[0].toFixed(2)}x + ${lassoModel.intercept_.toFixed(2)}`;
+            lassoR2Span.textContent = r2Score(y_data, lassoPredictions).toFixed(2);
+            lassoMAESpan.textContent = meanAbsoluteError(y_data, lassoPredictions).toFixed(2);
+            drawLine(lassoModel, '#ef4444', 2); // Rojo
+
+            // Regresión RANSAC
+            // residual_threshold debe ser sensible al noiseLevel pero también tolerar outliers
+            const ransacThreshold = parseFloat(noiseLevelSlider.value) * 10 + parseFloat(outlierMagnitudeSlider.value) * 0.1;
+            const ransacModel = new RANSACRegressor(2, ransacThreshold, 100);
+            ransacModel.fit(X_data, y_data);
+            const ransacPredictions = ransacModel.predict(X_data);
+            ransacEquationSpan.textContent = `y = ${ransacModel.coef_[0].toFixed(2)}x + ${ransacModel.intercept_.toFixed(2)}`;
+            ransacR2Span.textContent = r2Score(y_data, ransacPredictions).toFixed(2);
+            ransacMAESpan.textContent = meanAbsoluteError(y_data, ransacPredictions).toFixed(2);
+            drawLine(ransacModel, '#f59e0b', 3); // Naranja, un poco más gruesa
+        };
+
+        // --- Event Listeners ---
+        numPointsSlider.addEventListener('input', () => {
+            numPointsValue.textContent = numPointsSlider.value;
+            generateData();
+            trainAndDrawModels();
+        });
+        noiseLevelSlider.addEventListener('input', () => {
+            noiseLevelValue.textContent = noiseLevelSlider.value;
+            generateData(); // Regenerar datos para que el threshold de RANSAC se ajuste
+            trainAndDrawModels();
+        });
+        outlierRatioSlider.addEventListener('input', () => {
+            outlierRatioValue.textContent = parseFloat(outlierRatioSlider.value).toFixed(2);
+            generateData();
+            trainAndDrawModels();
+        });
+        outlierMagnitudeSlider.addEventListener('input', () => {
+            outlierMagnitudeValue.textContent = outlierMagnitudeSlider.value;
+            generateData();
+            trainAndDrawModels();
+        });
+        lassoAlphaSlider.addEventListener('input', () => {
+            lassoAlphaValue.textContent = parseFloat(lassoAlphaSlider.value).toFixed(2);
+            trainAndDrawModels();
+        });
+        ridgeAlphaSlider.addEventListener('input', () => {
+            ridgeAlphaValue.textContent = parseFloat(ridgeAlphaSlider.value).toFixed(2);
+            trainAndDrawModels();
+        });
+
+        generateDataBtn.addEventListener('click', () => {
+            generateData();
+            trainAndDrawModels();
+        });
+
+        // Inicializar al cargar la página
+        window.onload = function () {
+            generateData();
+            trainAndDrawModels();
+
+            // Asegurar que el canvas sea responsivo
+            const resizeCanvas = () => {
+                const parent = canvas.parentElement;
+                canvas.width = parent.clientWidth;
+                canvas.height = Math.min(parent.clientWidth * 0.7, 500); // Proporción de 16:9 o max 500px
+                generateData(); // Regenerar datos para ajustar escalas
+                trainAndDrawModels();
+            };
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas(); // Llamar una vez al inicio
+        };
+    </script>
+</body>
+</html>
