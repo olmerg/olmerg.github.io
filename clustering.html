@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Interactivo de Clustering K-Means</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .control-panel-card { @apply bg-white p-6 rounded-xl shadow-lg; }
+        .metric-card { @apply bg-gray-50 p-4 rounded-lg text-center border border-gray-200; }
+        .metric-title { @apply text-sm font-medium text-gray-500; }
+        .metric-value { @apply text-2xl font-bold text-indigo-600; }
+        .metric-desc { @apply text-xs text-gray-400 mt-1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 20px; height: 20px;
+            background: #4f46e5; cursor: pointer; border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px; height: 20px; background: #4f46e5; cursor: pointer; border-radius: 50%;
+        }
+        .btn { @apply px-4 py-2 text-white font-semibold rounded-lg shadow-md transition-colors duration-300; }
+        .btn-primary { @apply bg-indigo-600 hover:bg-indigo-700; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Explorando Clustering con K-Means</h1>
+            <p class="text-lg text-gray-600 mt-2">Visualiza el impacto de las métricas de distancia en la formación de clústeres.</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Panel de Control -->
+            <aside class="w-full lg:w-1/3">
+                <div class="control-panel-card space-y-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">1. Generación de Datos</h3>
+                        <label for="data-shape" class="text-sm font-medium text-gray-600">Forma de los datos</label>
+                        <select id="data-shape" class="w-full mt-1 p-2 border border-gray-300 rounded-lg">
+                            <option value="blobs" selected>Grupos (Blobs)</option>
+                            <option value="circles">Círculos Concéntricos</option>
+                            <option value="moons">Medias Lunas (Moons)</option>
+                            <option value="random">Aleatorio Uniforme</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">2. Parámetros del Algoritmo</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="k-clusters" class="text-sm font-medium text-gray-600 flex justify-between">Número de Clústeres (k): <span id="k-clusters-value" class="font-bold text-indigo-600">3</span></label>
+                                <input type="range" id="k-clusters" min="2" max="10" value="3" step="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-600">Métrica de Distancia</label>
+                                <div id="distance-metric" class="flex flex-wrap gap-2 mt-2">
+                                    <button data-metric="euclidean" class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white">Euclidiana (L2)</button>
+                                    <button data-metric="manhattan" class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700">Manhattan (L1)</button>
+                                    <button data-metric="chebyshev" class="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700">Chebyshev (L∞)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t flex justify-center">
+                         <button id="run-button" class="btn btn-primary">Ejecutar K-Means</button>
+                    </div>
+                </div>
+
+                <!-- Métricas de Evaluación -->
+                <div class="control-panel-card mt-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Métricas de Evaluación</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="metric-card">
+                            <h4 class="metric-title">Inercia</h4>
+                            <p id="inertia-value" class="metric-value">N/A</p>
+                            <p class="metric-desc">Homogeneidad (menor es mejor)</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4 class="metric-title">Coef. de Silueta</h4>
+                            <p id="silhouette-value" class="metric-value">N/A</p>
+                            <p class="metric-desc">Separación (cercano a 1 es mejor)</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Gráfica -->
+            <main class="w-full lg:w-2/3 bg-white p-4 rounded-xl shadow-lg min-h-[600px]">
+                <div id="plot"></div>
+            </main>
+        </div>
+    </div>
+
+<script>
+    // --- ELEMENTOS DEL DOM ---
+    const dataShapeSelect = document.getElementById('data-shape');
+    const kClustersSlider = document.getElementById('k-clusters');
+    const kClustersValue = document.getElementById('k-clusters-value');
+    const distanceMetricContainer = document.getElementById('distance-metric');
+    const runButton = document.getElementById('run-button');
+    const plotDiv = document.getElementById('plot');
+    const inertiaValueEl = document.getElementById('inertia-value');
+    const silhouetteValueEl = document.getElementById('silhouette-value');
+
+    let data = [];
+    let state = {
+        k: 3,
+        distance: 'euclidean'
+    };
+
+    // --- GENERACIÓN DE DATOS ---
+    function generateData() {
+        const shape = dataShapeSelect.value;
+        const n_samples = 300;
+        data = [];
+
+        if (shape === 'blobs') {
+            const centers = [[-3, -3], [3, 3], [-3, 3], [3, -3], [0,0]];
+            const k_blobs = 5;
+            for (let i = 0; i < n_samples; i++) {
+                const center = centers[Math.floor(Math.random() * k_blobs)];
+                data.push([center[0] + (Math.random() - 0.5) * 3, center[1] + (Math.random() - 0.5) * 3]);
+            }
+        } else if (shape === 'circles') {
+            for (let i = 0; i < n_samples; i++) {
+                const r = i < n_samples / 2 ? 3 : 6;
+                const angle = Math.random() * 2 * Math.PI;
+                data.push([r * Math.cos(angle) + (Math.random()-0.5)*0.5, r * Math.sin(angle) + (Math.random()-0.5)*0.5]);
+            }
+        } else if (shape === 'moons') {
+             for (let i = 0; i < n_samples; i++) {
+                const angle = (i / n_samples) * Math.PI;
+                if (i < n_samples / 2) {
+                    data.push([Math.cos(angle) * 5, Math.sin(angle) * 5 + (Math.random()-0.5)]);
+                } else {
+                    data.push([Math.cos(angle) * 5 + 2.5, Math.sin(angle) * -5 + (Math.random()-0.5) + 2]);
+                }
+            }
+        } else if (shape === 'random') {
+            for (let i = 0; i < n_samples; i++) {
+                data.push([(Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20]);
+            }
+        }
+        drawInitialPlot();
+    }
+    
+    // --- LÓGICA DE CLUSTERING (K-MEANS) ---
+    const distanceFunctions = {
+        euclidean: (a, b) => Math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2),
+        manhattan: (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]),
+        chebyshev: (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]))
+    };
+
+    function kMeans(data, k, distanceMetric) {
+        const distFn = distanceFunctions[distanceMetric];
+        let centroids = data.slice(0, k).map(d => [...d]); // Iniciar con los primeros k puntos
+        let assignments = new Array(data.length);
+        let changed = true;
+
+        for (let iter = 0; iter < 100 && changed; iter++) {
+            changed = false;
+            // Paso de asignación
+            data.forEach((point, i) => {
+                let minDist = Infinity;
+                let bestCluster = -1;
+                centroids.forEach((centroid, j) => {
+                    const d = distFn(point, centroid);
+                    if (d < minDist) {
+                        minDist = d;
+                        bestCluster = j;
+                    }
+                });
+                if (assignments[i] !== bestCluster) {
+                    assignments[i] = bestCluster;
+                    changed = true;
+                }
+            });
+
+            // Paso de actualización
+            const newCentroids = Array.from({ length: k }, () => [0, 0]);
+            const counts = new Array(k).fill(0);
+            data.forEach((point, i) => {
+                const cluster = assignments[i];
+                newCentroids[cluster][0] += point[0];
+                newCentroids[cluster][1] += point[1];
+                counts[cluster]++;
+            });
+
+            centroids = newCentroids.map((sum, i) => 
+                counts[i] > 0 ? [sum[0] / counts[i], sum[1] / counts[i]] : centroids[i] // si un clúster está vacío, no mover centroide
+            );
+        }
+        return { assignments, centroids };
+    }
+    
+    // --- CÁLCULO DE MÉTRICAS ---
+    function calculateMetrics(data, assignments, centroids) {
+        // 1. Inercia (Suma de distancias euclidianas al cuadrado)
+        let inertia = 0;
+        data.forEach((point, i) => {
+            const centroid = centroids[assignments[i]];
+            if(centroid){
+                inertia += distanceFunctions.euclidean(point, centroid) ** 2;
+            }
+        });
+
+        // 2. Coeficiente de Silueta
+        let totalSilhouette = 0;
+        data.forEach((point, i) => {
+            const clusterIndex = assignments[i];
+            const ownCluster = data.filter((_, j) => assignments[j] === clusterIndex);
+            
+            // a(i): Distancia media dentro del clúster
+            let a_i = 0;
+            if (ownCluster.length > 1) {
+                ownCluster.forEach(otherPoint => {
+                    if (point !== otherPoint) a_i += distanceFunctions.euclidean(point, otherPoint);
+                });
+                a_i /= (ownCluster.length - 1);
+            }
+
+            // b(i): Distancia media al clúster más cercano
+            let b_i = Infinity;
+            for (let k = 0; k < centroids.length; k++) {
+                if (k === clusterIndex) continue;
+                const otherCluster = data.filter((_, j) => assignments[j] === k);
+                if (otherCluster.length > 0) {
+                    let avgDistOther = 0;
+                    otherCluster.forEach(otherPoint => {
+                         avgDistOther += distanceFunctions.euclidean(point, otherPoint);
+                    });
+                    avgDistOther /= otherCluster.length;
+                    b_i = Math.min(b_i, avgDistOther);
+                }
+            }
+            
+            if (ownCluster.length > 1 && b_i !== Infinity) {
+                 totalSilhouette += (b_i - a_i) / Math.max(a_i, b_i);
+            }
+        });
+
+        const silhouette = data.length > 0 ? totalSilhouette / data.length : 0;
+
+        inertiaValueEl.textContent = inertia.toFixed(0);
+        silhouetteValueEl.textContent = silhouette.toFixed(3);
+    }
+
+
+    // --- VISUALIZACIÓN ---
+    function drawInitialPlot() {
+        const trace = {
+            x: data.map(d => d[0]),
+            y: data.map(d => d[1]),
+            mode: 'markers',
+            type: 'scatter',
+            marker: { color: 'gray', size: 7, opacity: 0.7 }
+        };
+        const layout = {
+            title: 'Datos Generados (Sin Agrupar)',
+            xaxis: { title: 'Característica 1' },
+            yaxis: { title: 'Característica 2' },
+        };
+        Plotly.newPlot(plotDiv, [trace], layout, {responsive: true});
+        inertiaValueEl.textContent = "N/A";
+        silhouetteValueEl.textContent = "N/A";
+    }
+
+    function drawClusteredPlot(assignments, centroids) {
+        const k = centroids.length;
+        const traces = [];
+        const colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52'];
+
+        for (let i = 0; i < k; i++) {
+            const clusterPoints = data.filter((_, j) => assignments[j] === i);
+            traces.push({
+                x: clusterPoints.map(d => d[0]),
+                y: clusterPoints.map(d => d[1]),
+                mode: 'markers',
+                type: 'scatter',
+                name: `Clúster ${i + 1}`,
+                marker: { color: colors[i % colors.length], size: 7, opacity: 0.7 }
+            });
+        }
+        
+        // Añadir centroides
+        traces.push({
+            x: centroids.map(c => c[0]),
+            y: centroids.map(c => c[1]),
+            mode: 'markers',
+            type: 'scatter',
+            name: 'Centroides',
+            marker: { color: 'black', size: 14, symbol: 'cross', line: {width: 3} }
+        });
+
+        const layout = {
+            title: `Resultado de K-Means (k=${k}, Distancia: ${state.distance})`,
+            xaxis: { title: 'Característica 1' },
+            yaxis: { title: 'Característica 2' },
+            showlegend: true
+        };
+        Plotly.newPlot(plotDiv, traces, layout, {responsive: true});
+    }
+
+    // --- MANEJADORES DE EVENTOS ---
+    kClustersSlider.addEventListener('input', (e) => {
+        state.k = parseInt(e.target.value);
+        kClustersValue.textContent = state.k;
+    });
+
+    distanceMetricContainer.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            state.distance = e.target.dataset.metric;
+            // Actualizar estilo de botones
+            distanceMetricContainer.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            e.target.classList.add('bg-indigo-600', 'text-white');
+            e.target.classList.remove('bg-gray-200', 'text-gray-700');
+        }
+    });
+    
+    dataShapeSelect.addEventListener('change', generateData);
+
+    runButton.addEventListener('click', () => {
+        if (data.length === 0) return;
+        const { assignments, centroids } = kMeans(data, state.k, state.distance);
+        drawClusteredPlot(assignments, centroids);
+        calculateMetrics(data, assignments, centroids);
+    });
+
+    // --- INICIALIZACIÓN ---
+    window.addEventListener('load', () => {
+        generateData();
+        kClustersValue.textContent = kClustersSlider.value;
+    });
+</script>
+
+</body>
+</html>
+
