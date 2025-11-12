@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Interactivo de Atención (Self-Attention)</title>
+    <!-- Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .control-panel-card { @apply bg-white p-6 rounded-xl shadow-lg; }
+        .token-box {
+            @apply flex items-center justify-center border border-gray-300 rounded-lg h-16 cursor-pointer
+                   text-lg font-semibold text-gray-700 transition-all duration-200 text-center;
+        }
+        .token-box.selected { @apply bg-blue-100 border-blue-500 shadow-md; }
+        .token-box.highlighted { @apply bg-green-100 border-green-500; }
+
+        .attention-weight-bar-container {
+            @apply w-full h-8 bg-gray-200 rounded-md overflow-hidden relative;
+        }
+        .attention-weight-bar {
+            @apply h-full bg-indigo-500 absolute transition-all duration-300 ease-out;
+        }
+        .attention-label {
+            @apply absolute top-0 left-0 w-full h-full flex items-center justify-center text-xs font-bold text-white;
+        }
+        .tooltip {
+            @apply absolute bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 pointer-events-none transition-opacity duration-200;
+            white-space: nowrap;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">¡La Atención es Todo lo que Necesitas!</h1>
+            <p class="text-lg text-gray-600 mt-2">Explora cómo las palabras de una oración se "prestan atención" entre sí.</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Panel de Control y Oración de Entrada --><aside class="w-full lg:w-1/3">
+                <div class="control-panel-card space-y-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">1. Selecciona una Oración</h3>
+                        <select id="sentence-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">-- Selecciona una oración --</option>
+                            <option value="El banco está cerca del río.">El banco está cerca del río.</option>
+                            <option value="La gata negra maulló.">La gata negra maulló.</option>
+                            <option value="Juan y María fueron al parque.">Juan y María fueron al parque.</option>
+                            <option value="Ella vio al hombre con el telescopio.">Ella vio al hombre con el telescopio.</option>
+                            <option value="Los perros que juegan son felices.">Los perros que juegan son felices.</option>
+                        </select>
+                        <button id="process-sentence-btn" class="mt-3 w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">Cargar Oración</button>
+                    </div>
+
+                    <div id="token-input-display" class="pt-4 border-t" style="min-height: 200px;">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">2. Tokens de Entrada</h3>
+                        <p class="text-sm text-gray-500 mb-2">Un **token** es la unidad básica que un modelo de lenguaje procesa. Puede ser una palabra, parte de una palabra, o incluso un signo de puntuación. Los LLM "entienden" el texto dividiéndolo en estos tokens.</p>
+                        <p class="text-sm text-gray-500 mb-3 mt-4">Haz clic en un token para ver su patrón de atención.</p>
+                        <div id="tokens-container" class="grid grid-cols-3 gap-2">
+                            <!-- Tokens se insertarán aquí --><div class="col-span-3 text-center text-gray-400 mt-4">Carga una oración para ver los tokens.</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Visualización de Atención --><main class="w-full lg:w-2/3 bg-white p-6 rounded-xl shadow-lg min-h-[600px] flex flex-col items-center justify-center relative">
+                <h2 id="attention-title" class="text-xl font-bold text-gray-800 mb-6 text-center">Selecciona un token para ver su patrón de atención.</h2>
+                
+                <div id="attention-visualization" class="w-full max-w-2xl hidden">
+                    <p class="text-gray-600 text-center mb-6">¿A qué palabras presta atención "<span id="selected-token-display" class="font-bold text-blue-700"></span>"?</p>
+                    <div id="attention-grid" class="grid gap-4 items-center">
+                        <!-- La rejilla de atención se construye aquí --></div>
+                </div>
+
+                <div id="initial-prompt" class="text-center text-gray-500 text-lg">
+                    <p>¡Selecciona una oración y haz clic en "Cargar Oración" para comenzar!</p>
+                    <p class="mt-2 text-sm">Luego, haz clic en cualquier token para visualizar cómo "presta atención" a otras palabras de la oración.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+<script>
+    const sentenceSelect = document.getElementById('sentence-select');
+    const processSentenceBtn = document.getElementById('process-sentence-btn');
+    const tokensContainer = document.getElementById('tokens-container');
+    const attentionTitle = document.getElementById('attention-title');
+    const initialPrompt = document.getElementById('initial-prompt');
+    const attentionVisualization = document.getElementById('attention-visualization');
+    const selectedTokenDisplay = document.getElementById('selected-token-display');
+    const attentionGrid = document.getElementById('attention-grid');
+
+    let currentTokens = [];
+    let selectedSentence = "";
+    let selectedTokenIndex = -1;
+
+    // Función para simular pesos de atención
+    function getSimulatedAttentionWeights(selectedIndex, tokens, sentence) {
+        const weights = Array(tokens.length).fill(0);
+        let totalWeight = 0;
+        const selectedWord = tokens[selectedIndex].toLowerCase().replace(/[.,!?;:]/g, ''); // Limpiar para comparación
+
+        tokens.forEach((token, i) => {
+            let weight = 0.1; // Peso base bajo
+            const currentWord = tokens[i].toLowerCase().replace(/[.,!?;:]/g, ''); // Limpiar para comparación
+
+            if (i === selectedIndex) {
+                weight = 0.6; // Un token siempre se presta atención a sí mismo (alta prioridad)
+            } else {
+                // Lógica de atención específica para las oraciones predefinidas
+                if (sentence === "El banco está cerca del río.") {
+                    if (selectedWord === "banco" && currentWord === "río") weight = 0.8;
+                    if (selectedWord === "río" && currentWord === "banco") weight = 0.8;
+                    if (selectedWord === "banco" && currentWord === "cerca") weight = 0.5;
+                    if (selectedWord === "cerca" && (currentWord === "banco" || currentWord === "río")) weight = 0.7;
+                    if (selectedWord === "el" && currentWord === "banco") weight = 0.7;
+                    if (selectedWord === "está" && (currentWord === "banco" || currentWord === "cerca" || currentWord === "río")) weight = 0.6;
+                } else if (sentence === "La gata negra maulló.") {
+                    if (selectedWord === "gata" && currentWord === "negra") weight = 0.8;
+                    if (selectedWord === "negra" && currentWord === "gata") weight = 0.8;
+                    if (selectedWord === "gata" && currentWord === "maulló") weight = 0.6;
+                    if (selectedWord === "maulló" && currentWord === "gata") weight = 0.7;
+                    if (selectedWord === "la" && currentWord === "gata") weight = 0.7;
+                } else if (sentence === "Juan y María fueron al parque.") {
+                    if (selectedWord === "juan" && currentWord === "maría") weight = 0.7;
+                    if (selectedWord === "maría" && currentWord === "juan") weight = 0.7;
+                    if (selectedWord === "fueron" && (currentWord === "juan" || currentWord === "maría" || currentWord === "parque")) weight = 0.6;
+                    if (selectedWord === "parque" && currentWord === "fueron") weight = 0.5;
+                } else if (sentence === "Ella vio al hombre con el telescopio.") {
+                    // Ambiguo: ¿Quién tiene el telescopio?
+                    if (selectedWord === "ella" && currentWord === "vio") weight = 0.7;
+                    if (selectedWord === "hombre" && currentWord === "vio") weight = 0.6;
+                    if (selectedWord === "telescopio" && currentWord === "con") weight = 0.7;
+                    // Aquí la atención puede ayudar a resolver la ambigüedad si se "asume" que "con" se refiere a "hombre"
+                    if (selectedWord === "con" && currentWord === "hombre") weight = 0.7;
+                    if (selectedWord === "con" && currentWord === "telescopio") weight = 0.7; // El "con" está muy relacionado con ambos para ilustrar la ambigüedad
+                    if (selectedWord === "hombre" && currentWord === "telescopio") weight = 0.3; // Relación indirecta
+                    if (selectedWord === "telescopio" && currentWord === "hombre") weight = 0.3; // Relación indirecta
+                } else if (sentence === "Los perros que juegan son felices.") {
+                    if (selectedWord === "perros" && currentWord === "juegan") weight = 0.8;
+                    if (selectedWord === "juegan" && currentWord === "perros") weight = 0.7;
+                    if (selectedWord === "que" && currentWord === "perros") weight = 0.6; // "Que" se refiere a "perros"
+                    if (selectedWord === "son" && (currentWord === "perros" || currentWord === "felices")) weight = 0.6;
+                    if (selectedWord === "felices" && currentWord === "perros") weight = 0.7;
+                }
+                
+                // Atención general para palabras adyacentes si no hay regla específica
+                if (Math.abs(selectedIndex - i) === 1) { // Palabras adyacentes
+                    weight = Math.max(weight, 0.3); 
+                }
+            }
+            weights[i] = weight;
+            totalWeight += weight;
+        });
+
+        // Normalizar para que sumen 1 (softmax)
+        return weights.map(w => w / totalWeight);
+    }
+
+    // --- MANEJADORES DE EVENTOS ---
+
+    processSentenceBtn.addEventListener('click', () => {
+        selectedSentence = sentenceSelect.value.trim();
+        if (selectedSentence) {
+            currentTokens = selectedSentence.split(/\s+/).filter(Boolean); // Divide por espacios, elimina vacíos
+            renderTokens();
+            initialPrompt.classList.add('hidden');
+            attentionVisualization.classList.add('hidden'); // Ocultar visualización previa
+            attentionTitle.textContent = 'Selecciona un token para ver su patrón de atención.';
+            selectedTokenIndex = -1;
+        } else {
+            tokensContainer.innerHTML = '<div class="col-span-3 text-center text-gray-400 mt-4">Carga una oración para ver los tokens.</div>';
+            currentTokens = [];
+            initialPrompt.classList.remove('hidden');
+            attentionVisualization.classList.add('hidden');
+            attentionTitle.textContent = '¡La Atención es Todo lo que Necesitas!';
+            selectedTokenIndex = -1;
+        }
+    });
+
+    tokensContainer.addEventListener('click', (e) => {
+        const tokenBox = e.target.closest('.token-box');
+        if (tokenBox) {
+            // Deseleccionar el token previamente seleccionado
+            document.querySelectorAll('.token-box').forEach(box => {
+                box.classList.remove('selected');
+            });
+
+            // Seleccionar el nuevo token
+            selectedTokenIndex = parseInt(tokenBox.dataset.index);
+            tokenBox.classList.add('selected');
+
+            renderAttention(selectedTokenIndex);
+            initialPrompt.classList.add('hidden');
+            attentionVisualization.classList.remove('hidden');
+            selectedTokenDisplay.textContent = currentTokens[selectedTokenIndex];
+            attentionTitle.textContent = `Atención de la palabra "${currentTokens[selectedTokenIndex]}"`;
+        }
+    });
+
+    function renderTokens() {
+        tokensContainer.innerHTML = '';
+        if (currentTokens.length === 0) {
+            tokensContainer.innerHTML = '<div class="col-span-3 text-center text-gray-400 mt-4">Carga una oración para ver los tokens.</div>';
+            return;
+        }
+        currentTokens.forEach((token, index) => {
+            const tokenBox = document.createElement('div');
+            tokenBox.className = 'token-box';
+            tokenBox.dataset.index = index;
+            tokenBox.textContent = token;
+            tokensContainer.appendChild(tokenBox);
+        });
+    }
+
+    function renderAttention(selectedIndex) {
+        attentionGrid.innerHTML = '';
+        attentionGrid.style.gridTemplateColumns = `auto 1fr auto`; // Token | Bar | %
+
+        const weights = getSimulatedAttentionWeights(selectedIndex, currentTokens, selectedSentence);
+
+        currentTokens.forEach((token, index) => {
+            const weight = weights[index];
+            const percentage = (weight * 100).toFixed(1);
+
+            // Token que recibe atención
+            const targetTokenBox = document.createElement('div');
+            targetTokenBox.className = 'token-box !h-12 !text-base !border-none !shadow-none !bg-transparent !cursor-default'; // Estilo más simple
+            targetTokenBox.textContent = token;
+            if (index === selectedIndex) {
+                 targetTokenBox.classList.add('highlighted'); // Resaltar el token que estamos analizando
+            }
+            attentionGrid.appendChild(targetTokenBox);
+
+            // Barra de peso de atención
+            const barContainer = document.createElement('div');
+            barContainer.className = 'attention-weight-bar-container';
+            const bar = document.createElement('div');
+            bar.className = 'attention-weight-bar';
+            bar.style.width = `${percentage}%`;
+            barContainer.appendChild(bar);
+            attentionGrid.appendChild(barContainer);
+
+            // Porcentaje
+            const percentageSpan = document.createElement('span');
+            percentageSpan.className = 'text-gray-700 font-medium text-sm w-12 text-right';
+            percentageSpan.textContent = `${percentage}%`;
+            attentionGrid.appendChild(percentageSpan);
+        });
+    }
+
+    // --- INICIALIZACIÓN ---
+    window.addEventListener('load', () => {
+        // Nada que inicializar, el prompt inicial lo cubre.
+    });
+</script>
+
+</body>
+</html>
