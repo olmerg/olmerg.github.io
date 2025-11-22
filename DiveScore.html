@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juez de Clavados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f9ff;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .score-font {
+            font-family: 'Oswald', sans-serif;
+        }
+
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-tap:active {
+            transform: scale(0.95);
+            background-color: #0ea5e9;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header id="app-header" class="bg-blue-900 text-white p-4 shadow-md z-10 transition-all duration-300">
+        <div class="flex justify-between items-center max-w-md mx-auto w-full">
+            <h1 class="text-xl font-bold"><i class="fas fa-water mr-2"></i>Juez de Clavados</h1>
+            <div class="text-sm opacity-80">Paso <span id="step-indicator">1</span>/2</div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow flex flex-col items-center justify-center w-full relative">
+        
+        <!-- STEP 1: Select Integer -->
+        <div id="step-1" class="w-full max-w-md p-4 h-full flex flex-col justify-center fade-in">
+            <h2 class="text-center text-gray-600 mb-6 text-lg font-medium">Selecciona el número entero</h2>
+            
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <button onclick="selectInteger(1)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">1</button>
+                <button onclick="selectInteger(2)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">2</button>
+                <button onclick="selectInteger(3)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">3</button>
+                <button onclick="selectInteger(4)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">4</button>
+                <button onclick="selectInteger(5)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">5</button>
+                <button onclick="selectInteger(6)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">6</button>
+                <button onclick="selectInteger(7)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">7</button>
+                <button onclick="selectInteger(8)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">8</button>
+                <button onclick="selectInteger(9)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">9</button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="selectInteger(0)" class="bg-white border-2 border-blue-200 text-blue-900 text-3xl font-bold py-6 rounded-xl shadow-sm btn-tap hover:bg-blue-50 transition-colors">0</button>
+                <button onclick="selectInteger(10)" class="bg-blue-600 text-white text-3xl font-bold py-6 rounded-xl shadow-md btn-tap hover:bg-blue-700 transition-colors">10</button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Select Decimal -->
+        <div id="step-2" class="w-full max-w-md p-4 h-full flex flex-col justify-center hidden">
+            <div class="text-center mb-8">
+                <span class="text-gray-500 text-sm uppercase tracking-wide">Entero seleccionado</span>
+                <div class="text-6xl font-bold text-blue-900 score-font mt-2" id="preview-integer">7</div>
+            </div>
+            
+            <h2 class="text-center text-gray-600 mb-6 text-lg font-medium">Selecciona el decimal</h2>
+
+            <div class="grid grid-cols-1 gap-6">
+                <button onclick="selectDecimal(0)" class="bg-white border-2 border-blue-200 text-blue-900 text-5xl font-bold py-10 rounded-2xl shadow-sm btn-tap hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                    <span class="text-3xl text-gray-400 align-top">.</span>0
+                </button>
+                <button onclick="selectDecimal(5)" class="bg-white border-2 border-blue-200 text-blue-900 text-5xl font-bold py-10 rounded-2xl shadow-sm btn-tap hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                     <span class="text-3xl text-gray-400 align-top">.</span>5
+                </button>
+            </div>
+
+            <button onclick="goBack()" class="mt-8 text-gray-500 hover:text-blue-600 py-2 px-4 rounded flex items-center justify-center mx-auto active:bg-gray-100">
+                <i class="fas fa-arrow-left mr-2"></i> Corregir entero
+            </button>
+        </div>
+
+        <!-- STEP 3: FINAL SCORE DISPLAY -->
+        <div id="step-3" class="bg-white w-full h-full fixed top-0 left-0 z-50 flex flex-col items-center justify-center hidden">
+            
+            <!-- The Big Score -->
+            <div class="flex-grow flex items-center justify-center w-full">
+                <div id="final-score-display" class="score-font font-bold text-black text-[35vh] leading-none tracking-tighter">
+                    <!-- Value injected by JS -->
+                </div>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="mb-12 w-full px-6">
+                <button onclick="resetApp()" class="w-full max-w-md mx-auto block bg-gray-100 text-gray-500 py-4 rounded-full text-lg font-medium hover:bg-gray-200 hover:text-gray-800 transition-colors shadow-sm active:bg-gray-300">
+                    <i class="fas fa-undo mr-2"></i> Nueva Calificación
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // State
+        let currentInteger = null;
+        let currentDecimal = null;
+
+        // DOM Elements
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const step3 = document.getElementById('step-3');
+        const header = document.getElementById('app-header');
+        const stepIndicator = document.getElementById('step-indicator');
+        const previewInteger = document.getElementById('preview-integer');
+        const finalDisplay = document.getElementById('final-score-display');
+
+        function selectInteger(num) {
+            currentInteger = num;
+            previewInteger.textContent = num;
+            
+            step1.classList.add('hidden');
+            step1.classList.remove('fade-in');
+            step2.classList.remove('hidden');
+            step2.classList.add('fade-in');
+            stepIndicator.textContent = "2";
+        }
+
+        function selectDecimal(dec) {
+            currentDecimal = dec; 
+            
+            let finalScoreString = "";
+            
+            if (currentInteger === 10) {
+                if (dec === 5) {
+                    finalScoreString = "10.5"; 
+                } else {
+                    finalScoreString = "10"; 
+                }
+            } else {
+                if (dec === 0) {
+                    finalScoreString = currentInteger.toString() + ".0";
+                } else {
+                    finalScoreString = currentInteger.toString() + ".5";
+                }
+            }
+
+            finalDisplay.textContent = finalScoreString;
+            
+            finalDisplay.className = "score-font font-bold text-[35vh] leading-none tracking-tighter ";
+            if(currentInteger >= 9) {
+                finalDisplay.classList.add("text-green-600");
+            } else if (currentInteger >= 5) {
+                finalDisplay.classList.add("text-blue-900");
+            } else {
+                finalDisplay.classList.add("text-gray-700");
+            }
+
+            step2.classList.add('hidden');
+            header.classList.add('hidden'); 
+            step3.classList.remove('hidden');
+            step3.classList.add('fade-in');
+        }
+
+        function goBack() {
+            step2.classList.add('hidden');
+            step2.classList.remove('fade-in');
+            step1.classList.remove('hidden');
+            step1.classList.add('fade-in');
+            stepIndicator.textContent = "1";
+            currentInteger = null;
+        }
+
+        function resetApp() {
+            currentInteger = null;
+            currentDecimal = null;
+
+            step3.classList.add('hidden');
+            header.classList.remove('hidden');
+            step1.classList.remove('hidden');
+            step1.classList.add('fade-in');
+            step2.classList.add('hidden');
+            stepIndicator.textContent = "1";
+        }
+    </script>
+</body>
+</html>
+
+
