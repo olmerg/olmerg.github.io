@@ -68,6 +68,18 @@ a{
     font-size: 1.2rem;
     padding-left: 0;
 }
+
+.section-2 li{
+    margin-bottom: 10px;
+}
+
+.section-2 .item-note{
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    color: #7A7C80;
+    margin-top: 2px;
+}
 /* animations / utilities */
 .section-2 a:hover{
     font-size: 1.3rem;
