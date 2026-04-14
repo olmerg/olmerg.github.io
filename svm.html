@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tablero Interactivo - Support Vector Machine</title>
-    <!-- Usamos Tailwind CSS para mantener un diseño limpio y moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Cargamos MathJax para renderizar las fórmulas de la diapositiva -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         canvas { 
@@ -15,96 +17,125 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             cursor: crosshair;
         }
+        .math-text { font-size: 0.85rem; }
     </style>
 </head>
 <body class="p-6 text-slate-800">
 
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-6">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-6 border-b pb-4">
             <h1 class="text-3xl font-bold text-slate-900">Support Vector Machine (SVM) - Tablero Interactivo</h1>
-            <p class="text-slate-600 mt-2">Haz clic en el lienzo para agregar puntos. Ajusta el parámetro C para ver cómo cambia el margen.</p>
+            <p class="text-slate-600 mt-2">Explora la optimización del hiperplano y la geometría de los vectores de soporte.</p>
         </header>
 
-        <div class="flex flex-col md:flex-row gap-8">
-            <!-- Panel de Control -->
-            <div class="w-full md:w-1/3 space-y-6 bg-white p-6 rounded-lg shadow-sm border border-slate-200 h-fit">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Panel Izquierdo: Controles y Métricas -->
+            <div class="lg:col-span-4 space-y-6">
                 
-                <div>
-                    <h3 class="text-lg font-semibold mb-3">1. Selecciona la Clase</h3>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="classSelect" value="1" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
-                            <span class="text-blue-600 font-medium">Clase +1 (Azul)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="classSelect" value="-1" class="w-4 h-4 text-red-600 focus:ring-red-500">
-                            <span class="text-red-600 font-medium">Clase -1 (Rojo)</span>
-                        </label>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Configuración</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 block mb-2">Clase a dibujar:</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer bg-blue-50 px-3 py-2 rounded border border-blue-200">
+                                    <input type="radio" name="classSelect" value="1" checked class="w-4 h-4 text-blue-600">
+                                    <span class="text-blue-700 font-bold">+1</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer bg-red-50 px-3 py-2 rounded border border-red-200">
+                                    <input type="radio" name="classSelect" value="-1" class="w-4 h-4 text-red-600">
+                                    <span class="text-red-700 font-bold">-1</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-sm font-medium text-slate-700">Parámetro de Regularización \(C\)</label>
+                                <span id="c-value-display" class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">C = 1.0</span>
+                            </div>
+                            <input type="range" id="c-param" min="0.1" max="50" step="0.5" value="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-[10px] text-slate-400 mt-1 italic">Controla el compromiso entre margen y error.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex gap-2">
+                        <button id="btn-clear" class="flex-1 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded transition-colors">Limpiar</button>
+                        <button id="btn-esc-1" class="flex-1 py-2 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded border border-indigo-200 transition-colors">Caso Ideal</button>
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="text-lg font-semibold mb-3">2. Parámetro de Regularización (C)</h3>
-                    <p class="text-sm text-slate-500 mb-2">Controla la penalización por clasificar mal un punto. <br><b>C alto:</b> Margen estricto. <b>C bajo:</b> Margen suave (permite errores).</p>
-                    <input type="range" id="c-param" min="0.01" max="50" step="0.1" value="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
-                    <div class="flex justify-between text-sm mt-1 font-mono text-slate-600">
-                        <span>Suave (0.01)</span>
-                        <span id="c-value-display" class="font-bold text-slate-900">C = 1.0</span>
-                        <span>Estricto (50)</span>
+                <!-- Panel de Métricas -->
+                <div class="bg-slate-900 text-white p-5 rounded-lg shadow-inner">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Métricas de Optimización</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end border-b border-slate-800 pb-2">
+                            <span class="text-sm">Vectores de Soporte:</span>
+                            <span id="sv-count" class="text-xl font-mono text-indigo-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-end border-b border-slate-800 pb-2">
+                            <span class="text-sm">Ancho del Margen (\(2/||w||\)):</span>
+                            <span id="margin-width" class="text-xl font-mono text-emerald-400">0.00</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 leading-relaxed italic">
+                            Nota: Los vectores de soporte son puntos \(x_i\) donde \(|D(x_i)| \approx 1\).
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="pt-4 border-t border-slate-200 space-y-3">
-                    <button id="btn-clear" class="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded transition-colors">
-                        Limpiar Tablero
-                    </button>
+            <!-- Panel Central: Canvas -->
+            <div class="lg:col-span-5 flex flex-col items-center">
+                <canvas id="svmCanvas" width="550" height="550" class="w-full max-w-[550px] aspect-square"></canvas>
+                <div id="pedagogical-hint" class="mt-4 p-4 bg-blue-50 text-blue-800 text-sm rounded border border-blue-200 w-full text-center font-medium">
+                    Haz clic en el lienzo para agregar puntos de diferentes colores.
                 </div>
+            </div>
 
-                <!-- Panel de Métricas Pedagógicas (NUEVO) -->
-                <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 space-y-3">
-                    <h3 class="text-md font-bold text-indigo-900 flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        Análisis en Tiempo Real
+            <!-- Panel Derecho: Relación con la Diapositiva -->
+            <div class="lg:col-span-3 space-y-4">
+                <div class="bg-white p-5 rounded-lg border border-slate-200 h-full">
+                    <h3 class="text-md font-bold mb-3 flex items-center gap-2">
+                        <span class="bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded">TEORÍA</span>
+                        ¿Qué está calculando <code>trainSVM</code>?
                     </h3>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div class="bg-white p-3 rounded shadow-sm text-center border border-indigo-50">
-                            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Vectores Soporte</p>
-                            <p id="sv-count" class="text-2xl font-black text-indigo-600">0</p>
-                        </div>
-                        <div class="bg-white p-3 rounded shadow-sm text-center border border-indigo-50">
-                            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Ancho Margen</p>
-                            <p id="margin-width" class="text-2xl font-black text-emerald-600">0.00</p>
-                        </div>
-                    </div>
-                    <p id="pedagogical-hint" class="text-sm text-indigo-800 font-medium leading-tight mt-2">
-                        Agrega puntos de ambas clases para entrenar el modelo.
-                    </p>
-                </div>
+                    
+                    <div class="space-y-5 math-text text-slate-700">
+                        <section>
+                            <p class="font-bold text-xs text-slate-500 uppercase mb-1">1. Función de Decisión</p>
+                            <p class="bg-slate-50 p-2 rounded border">
+                                \( D(x) = \langle w, x \rangle + b \)
+                            </p>
+                            <p class="text-[11px] mt-1 text-slate-500">Calculamos el producto punto de los pesos \(w\) por tus coordenadas \(x\).</p>
+                        </section>
 
-                <!-- Guía de Aprendizaje (NUEVO) -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-3">Guía de Exploración</h3>
-                    <div class="space-y-2">
-                        <button id="btn-esc-1" class="w-full text-left p-3 text-sm rounded border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all group">
-                            <strong class="block text-slate-800 group-hover:text-blue-700">A. Separación Ideal</strong>
-                            <span class="text-slate-500 text-xs">Observa cómo se traza el margen máximo entre grupos claros.</span>
-                        </button>
-                        <button id="btn-esc-2" class="w-full text-left p-3 text-sm rounded border border-slate-200 hover:border-red-400 hover:bg-red-50 transition-all group">
-                            <strong class="block text-slate-800 group-hover:text-red-700">B. El problema del "Outlier"</strong>
-                            <span class="text-slate-500 text-xs">Aparece un intruso. ¿Cómo afecta al margen? Juega con la C.</span>
-                        </button>
-                    </div>
-                </div>
+                        <section>
+                            <p class="font-bold text-xs text-slate-500 uppercase mb-1">2. La Condición del Margen</p>
+                            <p class="bg-slate-50 p-2 rounded border">
+                                \( y_i (\langle w, x_i \rangle + b) \ge 1 \)
+                            </p>
+                            <p class="text-[11px] mt-1 text-slate-500 italic">Si esta condición es < 1, el punto es un <b>Vector de Soporte</b> o un error.</p>
+                        </section>
 
-                <div class="mt-2 p-3 bg-slate-50 text-slate-600 text-xs rounded border border-slate-200">
-                    <strong>Leyenda visual:</strong> Los puntos con un aro negro son los <span class="font-bold text-slate-800">Vectores de Soporte</span> (los únicos que el modelo "recuerda" para trazar la línea).
+                        <section>
+                            <p class="font-bold text-xs text-slate-500 uppercase mb-1">3. Optimización en código</p>
+                            <div class="text-[11px] font-mono bg-slate-900 text-indigo-300 p-3 rounded">
+                                // Derivada de Regularización<br>
+                                grad_w = w;<br>
+                                // Derivada de Error (Hinge)<br>
+                                if (margin < 1) {<br>
+                                &nbsp;&nbsp;grad_w -= C * y * x;<br>
+                                &nbsp;&nbsp;grad_b -= C * y;<br>
+                                }
+                            </div>
+                            <p class="text-[11px] mt-1 text-slate-500">El descenso de gradiente minimiza la norma de \(w\) (máximo margen) penalizando puntos intrusos según \(C\).</p>
+                        </section>
+                    </div>
                 </div>
             </div>
 
-            <!-- Área del Canvas -->
-            <div class="w-full md:w-2/3 flex justify-center">
-                <canvas id="svmCanvas" width="600" height="600" class="w-full max-w-[600px] aspect-square"></canvas>
-            </div>
         </div>
     </div>
 
@@ -113,26 +144,21 @@
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
-        const scale = 50; // 50 píxeles = 1 unidad matemática (Plano de -6 a +6)
+        const scale = 45; 
 
         let points = [];
         let w = [0, 0];
         let b = 0;
 
-        // Elementos UI
         const radios = document.getElementsByName('classSelect');
         const cParamSlider = document.getElementById('c-param');
         const cValueDisplay = document.getElementById('c-value-display');
         const btnClear = document.getElementById('btn-clear');
-        
-        // Nuevos Elementos UI Pedagógicos
         const svCountDisplay = document.getElementById('sv-count');
         const marginWidthDisplay = document.getElementById('margin-width');
         const pedagogicalHint = document.getElementById('pedagogical-hint');
         const btnEsc1 = document.getElementById('btn-esc-1');
-        const btnEsc2 = document.getElementById('btn-esc-2');
 
-        // Transformaciones entre Canvas y Plano Cartesiano Matemático
         function toMath(cx, cy) {
             return [(cx - width / 2) / scale, -(cy - height / 2) / scale];
         }
@@ -141,86 +167,57 @@
             return [mx * scale + width / 2, -my * scale + height / 2];
         }
 
-        // Obtener la clase seleccionada actualmente
         function getCurrentClass() {
-            for (let radio of radios) {
-                if (radio.checked) return parseInt(radio.value);
-            }
+            for (let radio of radios) if (radio.checked) return parseInt(radio.value);
             return 1;
         }
 
-        // Evento para agregar puntos al hacer clic
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
-            // Calcular coordenadas relativas al canvas, sin importar el tamaño en pantalla
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const cx = (e.clientX - rect.left) * scaleX;
-            const cy = (e.clientY - rect.top) * scaleY;
-            
-            points.push({ cx: cx, cy: cy, class: getCurrentClass() });
+            const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+            points.push({ cx, cy, class: getCurrentClass() });
             trainAndDraw();
         });
 
-        // Actualizar C cuando se mueve el slider
         cParamSlider.addEventListener('input', (e) => {
             cValueDisplay.innerText = `C = ${parseFloat(e.target.value).toFixed(1)}`;
             trainAndDraw();
         });
 
-        // Limpiar tablero
         btnClear.addEventListener('click', () => {
-            points = [];
-            w = [0, 0];
-            b = 0;
+            points = []; w = [0, 0]; b = 0;
             draw();
         });
 
-        // Escenario Pedagógico 1: Separación Clara
         btnEsc1.addEventListener('click', () => {
             points = [
-                { cx: 150, cy: 150, class: 1 }, { cx: 250, cy: 100, class: 1 }, { cx: 200, cy: 250, class: 1 },
-                { cx: 450, cy: 450, class: -1 }, { cx: 400, cy: 500, class: -1 }, { cx: 500, cy: 400, class: -1 }
+                { cx: 150, cy: 150, class: 1 }, { cx: 200, cy: 100, class: 1 }, { cx: 120, cy: 220, class: 1 },
+                { cx: 400, cy: 400, class: -1 }, { cx: 450, cy: 350, class: -1 }, { cx: 380, cy: 480, class: -1 }
             ];
-            cParamSlider.value = 10;
-            cValueDisplay.innerText = `C = 10.0`;
             trainAndDraw();
-            pedagogicalHint.innerHTML = "<b>Escenario A:</b> Datos linealmente separables. El modelo encuentra fácilmente el 'callejón' (margen) más ancho posible.";
+            pedagogicalHint.innerText = "Caso Ideal: Observa cómo el margen busca el espacio libre más grande.";
         });
 
-        // Escenario Pedagógico 2: El Outlier (Punto atípico)
-        btnEsc2.addEventListener('click', () => {
-            points = [
-                { cx: 150, cy: 150, class: 1 }, { cx: 250, cy: 100, class: 1 }, { cx: 200, cy: 250, class: 1 },
-                { cx: 450, cy: 450, class: -1 }, { cx: 400, cy: 500, class: -1 }, { cx: 500, cy: 400, class: -1 },
-                // El outlier (punto azul en zona roja)
-                { cx: 420, cy: 420, class: 1 } 
-            ];
-            cParamSlider.value = 50; // Margen estricto por defecto para mostrar el quiebre
-            cValueDisplay.innerText = `C = 50.0`;
-            trainAndDraw();
-            pedagogicalHint.innerHTML = "<b>Escenario B:</b> Observa el punto azul solitario. Con <b>C alto</b>, el modelo sacrifica todo el margen para no equivocarse. <br>👉 <i>¡Baja el C a 0.1 para permitir el error y recuperar un margen saludable!</i>";
-        });
-
-        // Lógica de Entrenamiento (Gradient Descent con Hinge Loss)
+        /**
+         * RELACIÓN CON LA DIAPOSITIVA:
+         * El objetivo es minimizar 1/2 ||w||^2 + C * sum(hinge_loss)
+         */
         function trainSVM() {
             if (points.length < 2) return;
-            
-            // Verificar que existan ambas clases, si no, no se puede trazar una frontera
             const classes = new Set(points.map(p => p.class));
             if (classes.size < 2) return;
 
-            // Reiniciar pesos
             w = [0.01, -0.01]; 
             b = 0;
-            
             const C = parseFloat(cParamSlider.value);
-            const lr = 0.005; // Tasa de aprendizaje
-            const epochs = 1500; // Iteraciones
+            const lr = 0.005;
+            const epochs = 1500;
 
-            // Batch Gradient Descent
             for (let iter = 0; iter < epochs; iter++) {
-                let grad_w0 = w[0];
+                // El gradiente de (1/2)||w||^2 es simplemente w.
+                // Esto es lo que minimiza la norma y maximiza el margen.
+                let grad_w0 = w[0]; 
                 let grad_w1 = w[1];
                 let grad_b = 0;
 
@@ -228,29 +225,28 @@
                     let [x0, x1] = toMath(p.cx, p.cy);
                     let y = p.class;
                     
-                    // Condición del margen: y * (w*x + b)
-                    let margin = y * (w[0] * x0 + w[1] * x1 + b);
+                    // Condición D(x) de la diapositiva
+                    let decisionValue = w[0] * x0 + w[1] * x1 + b;
+                    let marginCondition = y * decisionValue;
 
-                    // Si viola el margen o está dentro de él, aplicamos Hinge Loss
-                    if (margin < 1) {
+                    // Si marginCondition < 1, el punto es un Vector de Soporte (o error)
+                    // que contribuye al gradiente (Hinge Loss)
+                    if (marginCondition < 1) {
                         grad_w0 -= C * y * x0;
                         grad_w1 -= C * y * x1;
                         grad_b -= C * y;
                     }
                 }
-
-                // Actualizar pesos
                 w[0] -= lr * grad_w0;
                 w[1] -= lr * grad_w1;
                 b -= lr * grad_b;
             }
         }
 
-        // Dibujar el plano, puntos y líneas
         function draw() {
             ctx.clearRect(0, 0, width, height);
 
-            // Dibujar cuadrícula tenue
+            // Grid
             ctx.strokeStyle = '#f1f5f9';
             ctx.lineWidth = 1;
             for (let i = 0; i < width; i += scale) {
@@ -258,32 +254,21 @@
                 ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
             }
 
-            // Ejes centrales X e Y
+            // Ejes
             ctx.strokeStyle = '#cbd5e1';
             ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2, height); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, height/2); ctx.lineTo(width, height/2); ctx.stroke();
 
-            // Dibujar Líneas del SVM si el modelo está entrenado
+            // Dibujar líneas del modelo
             if (w[0] !== 0 || w[1] !== 0) {
-                // Función auxiliar para dibujar una línea w0*x + w1*y + b = offset
                 const drawLine = (offset, color, dash = [], lineWidth = 2) => {
                     ctx.beginPath();
                     ctx.strokeStyle = color;
                     ctx.setLineDash(dash);
                     ctx.lineWidth = lineWidth;
-
-                    let x1 = -20, y1, x2 = 20, y2;
-
-                    if (Math.abs(w[1]) > 1e-5) {
-                        // Despejamos y: y = (offset - b - w0*x) / w1
-                        y1 = (offset - b - w[0] * x1) / w[1];
-                        y2 = (offset - b - w[0] * x2) / w[1];
-                    } else {
-                        // Línea vertical
-                        x1 = (offset - b) / w[0]; y1 = -20;
-                        x2 = (offset - b) / w[0]; y2 = 20;
-                    }
-
+                    let x1 = -20, x2 = 20;
+                    let y1 = (offset - b - w[0] * x1) / w[1];
+                    let y2 = (offset - b - w[0] * x2) / w[1];
                     let p1 = toCanvas(x1, y1);
                     let p2 = toCanvas(x2, y2);
                     ctx.moveTo(p1[0], p1[1]);
@@ -291,88 +276,47 @@
                     ctx.stroke();
                 };
 
-                // Margen -1 (Rojo)
-                drawLine(-1, '#ef4444', [5, 5], 1.5);
-                // Margen +1 (Azul)
-                drawLine(1, '#3b82f6', [5, 5], 1.5);
-                // Hiperplano central (Negro)
-                drawLine(0, '#0f172a', [], 2);
-                ctx.setLineDash([]); // Reset dash
+                drawLine(-1, '#fee2e2', [4, 4], 1); // Margen inferior
+                drawLine(1, '#dbeafe', [4, 4], 1);  // Margen superior
+                drawLine(0, '#1e293b', [], 2);      // Hiperplano central
+                ctx.setLineDash([]);
             }
 
-            let currentSVCount = 0;
-
-            // Dibujar los puntos
-            for (let p of points) {
+            let svCount = 0;
+            points.forEach(p => {
                 let [x0, x1] = toMath(p.cx, p.cy);
-                let y = p.class;
-                
-                // Calcular margen del punto para ver si es Vector de Soporte
-                let margin = y * (w[0] * x0 + w[1] * x1 + b);
-                let isSupportVector = false;
-                
-                // Si el margen es cercano a 1 (o menor si está violando el margen) y tenemos un modelo entrenado
-                if ((w[0] !== 0 || w[1] !== 0) && margin <= 1.05) {
-                    isSupportVector = true;
-                    currentSVCount++;
-                }
+                let dist = p.class * (w[0] * x0 + w[1] * x1 + b);
+                let isSV = (w[0] !== 0) && dist <= 1.05;
 
-                // Dibujar anillo si es Vector de Soporte
-                if (isSupportVector) {
+                if (isSV) {
+                    svCount++;
                     ctx.beginPath();
-                    ctx.arc(p.cx, p.cy, 12, 0, 2 * Math.PI);
+                    ctx.arc(p.cx, p.cy, 11, 0, Math.PI * 2);
                     ctx.strokeStyle = '#1e293b';
                     ctx.lineWidth = 2;
                     ctx.stroke();
                 }
 
-                // Dibujar el punto
                 ctx.beginPath();
-                ctx.arc(p.cx, p.cy, 6, 0, 2 * Math.PI);
-                ctx.fillStyle = y === 1 ? '#3b82f6' : '#ef4444'; // Azul o Rojo
+                ctx.arc(p.cx, p.cy, 6, 0, Math.PI * 2);
+                ctx.fillStyle = p.class === 1 ? '#3b82f6' : '#ef4444';
                 ctx.fill();
                 ctx.strokeStyle = 'white';
                 ctx.lineWidth = 1.5;
                 ctx.stroke();
-            }
+            });
 
-            // --- ACTUALIZAR MÉTRICAS PEDAGÓGICAS ---
-            if (points.length > 0) {
-                svCountDisplay.innerText = currentSVCount;
-                
-                // Calcular Ancho del Margen matemáticamente: 2 / ||w||
-                let wNorm = Math.sqrt(w[0]*w[0] + w[1]*w[1]);
-                let mWidth = wNorm > 0 ? (2 / wNorm).toFixed(2) : "0.00";
-                marginWidthDisplay.innerText = mWidth;
-
-                // Mensajes dinámicos si no estamos en un escenario predefinido
-                if (!pedagogicalHint.innerHTML.includes("Escenario")) {
-                    if (points.length < 2) {
-                        pedagogicalHint.innerText = "Faltan puntos para trazar una frontera.";
-                    } else if (w[0] === 0 && w[1] === 0) {
-                        pedagogicalHint.innerText = "Asegúrate de agregar puntos de ambas clases (Rojo y Azul).";
-                    } else if (currentSVCount === points.length && points.length > 4) {
-                        pedagogicalHint.innerText = "¡Casi todos los puntos son Vectores de Soporte! Tienes un 'Margen Suave' muy permisivo (C bajo).";
-                    } else {
-                        pedagogicalHint.innerText = `El modelo está ignorando los demás puntos y basando su línea únicamente en los ${currentSVCount} Vectores de Soporte.`;
-                    }
-                }
-            } else {
-                svCountDisplay.innerText = "0";
-                marginWidthDisplay.innerText = "0.00";
-                pedagogicalHint.innerText = "Agrega puntos de ambas clases para entrenar el modelo.";
-            }
+            svCountDisplay.innerText = svCount;
+            let wNorm = Math.sqrt(w[0]**2 + w[1]**2);
+            marginWidthDisplay.innerText = wNorm > 0 ? (2/wNorm).toFixed(3) : "0.00";
         }
 
-        // Función unificada para re-entrenar y dibujar
         function trainAndDraw() {
             trainSVM();
             draw();
         }
 
-        // Dibujo inicial
         draw();
-
     </script>
 </body>
 </html>
