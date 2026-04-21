@@ -1,355 +1,409 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, Info, RotateCcw, XCircle } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crucigrama: Educación Sexual</title>
+  <!-- Tailwind CSS para los estilos -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons para los íconos -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Ocultar el cursor de texto nativo para un look más limpio */
+    input.caret-transparent { caret-color: transparent; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans md:p-8 p-4">
 
-const WORDS = [
-  { id: '1D', number: 1, direction: 'down', word: 'GONORREA', row: 1, col: 6, clue: 'Infección bacteriana que puede causar ardor al orinar; a veces asintomática en mujeres.' },
-  { id: '2D', number: 2, direction: 'down', word: 'CLAMIDIA', row: 2, col: 2, clue: 'Una de las ETS bacterianas más comunes, puede causar infertilidad si no se trata a tiempo.' },
-  { id: '2A', number: 2, direction: 'across', word: 'CONDON', row: 2, col: 2, clue: 'Método anticonceptivo de barrera que previene embarazos y la mayoría de ETS.' },
-  { id: '3D', number: 3, direction: 'down', word: 'VPH', row: 4, col: 3, clue: 'Virus muy común responsable de las verrugas genitales y ciertos tipos de cáncer (siglas).' },
-  { id: '4A', number: 4, direction: 'across', word: 'VIH', row: 6, col: 1, clue: 'Virus que ataca el sistema inmunológico, del cual se derivan los tratamientos antirretrovirales (siglas).' },
-  { id: '5A', number: 5, direction: 'across', word: 'HERPES', row: 7, col: 5, clue: 'Infección viral común que causa llagas o ampollas dolorosas en los genitales o boca.' },
-  { id: '6D', number: 6, direction: 'down', word: 'SIFILIS', row: 7, col: 10, clue: 'Infección bacteriana que progresa en etapas, comenzando frecuentemente con un chancro o llaga indolora.' },
-  { id: '7A', number: 7, direction: 'across', word: 'SIDA', row: 13, col: 10, clue: 'Etapa final y más grave de la infección causada por el Virus de Inmunodeficiencia Humana (siglas).' }
-];
-
-const GRID_SIZE = 15;
-
-export default function App() {
-  const [grid, setGrid] = useState([]);
-  const [userAnswers, setUserAnswers] = useState(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('')));
-  const [focusedCell, setFocusedCell] = useState({ r: 2, c: 2 });
-  const [direction, setDirection] = useState('across'); // 'across' or 'down'
-  const [validationErrors, setValidationErrors] = useState(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const cellRefs = useRef(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)));
-
-  useEffect(() => {
-    // Generate initial grid layout
-    let newGrid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
-    WORDS.forEach(wordObj => {
-      let r = wordObj.row;
-      let c = wordObj.col;
-      for (let i = 0; i < wordObj.word.length; i++) {
-        if (!newGrid[r][c]) {
-          newGrid[r][c] = { correctLetter: wordObj.word[i], words: [], number: null };
-        }
-        newGrid[r][c].words.push(wordObj.id);
-        if (i === 0 && !newGrid[r][c].number) {
-          newGrid[r][c].number = wordObj.number;
-        }
-        if (wordObj.direction === 'across') c++;
-        else r++;
-      }
-    });
-    setGrid(newGrid);
-  }, []);
-
-  const getActiveWords = (r, c) => {
-    if (!grid[r] || !grid[r][c]) return [];
-    return grid[r][c].words;
-  };
-
-  const getHighlightClass = (r, c) => {
-    if (!grid[r] || !grid[r][c]) return '';
-    const isActiveCell = focusedCell.r === r && focusedCell.c === c;
+  <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
     
-    // Find if the cell belongs to the currently active word based on direction
-    const activeWords = getActiveWords(focusedCell.r, focusedCell.c);
-    let isPartOfActiveWord = false;
-    
-    WORDS.forEach(word => {
-      if (activeWords.includes(word.id) && word.direction === direction) {
-        if (word.direction === 'across' && r === word.row && c >= word.col && c < word.col + word.word.length) {
-          isPartOfActiveWord = true;
-        }
-        if (word.direction === 'down' && c === word.col && r >= word.row && r < word.row + word.word.length) {
-          isPartOfActiveWord = true;
-        }
-      }
-    });
+    <!-- Header -->
+    <div class="bg-teal-700 text-white p-6 md:p-8">
+      <h1 class="text-3xl font-bold mb-2">Crucigrama: Educación Sexual y Prevención</h1>
+      <p class="text-teal-100 flex items-center text-sm md:text-base">
+        <i data-lucide="info" class="w-5 h-5 mr-2"></i>
+        Aprende sobre las Enfermedades de Transmisión Sexual (ETS) completando este juego.
+      </p>
+    </div>
 
-    if (isActiveCell) return 'bg-teal-300 outline-none ring-2 ring-teal-600 z-10';
-    if (isPartOfActiveWord) return 'bg-teal-100';
-    if (validationErrors && validationErrors[r][c]) return 'bg-red-100 text-red-600';
-    if (isSuccess) return 'bg-green-100 text-green-700';
-    return 'bg-white hover:bg-slate-50';
-  };
-
-  const handleCellClick = (r, c) => {
-    if (validationErrors) setValidationErrors(null);
-    
-    if (focusedCell.r === r && focusedCell.c === c) {
-      // Toggle direction if clicking the same cell
-      const cellWords = getActiveWords(r, c);
-      if (cellWords.length > 1) {
-        setDirection(prev => prev === 'across' ? 'down' : 'across');
-      }
-    } else {
-      // Set new focus, determine best direction
-      const cellWords = getActiveWords(r, c);
-      setFocusedCell({ r, c });
+    <div class="flex flex-col lg:flex-row p-6 gap-8">
       
-      if (cellWords.length === 1) {
-        const word = WORDS.find(w => w.id === cellWords[0]);
-        setDirection(word.direction);
-      }
-    }
+      <!-- Columna Izquierda: Cuadrícula -->
+      <div class="flex-1 flex flex-col items-center select-none overflow-x-auto">
+        <div class="inline-block p-4 bg-slate-100 rounded-xl">
+          <div id="grid-container" class="flex flex-col border-t border-l border-slate-400">
+            <!-- La cuadrícula se generará aquí con JavaScript -->
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="mt-6 flex gap-4 w-full justify-center">
+          <button onclick="resetGrid()" class="flex items-center px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors">
+            <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2"></i>
+            Reiniciar
+          </button>
+          <button onclick="checkAnswers()" class="flex items-center px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold shadow-md transition-colors">
+            <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+            Verificar
+          </button>
+        </div>
+
+        <!-- Mensajes de Validación -->
+        <div id="success-msg" class="hidden mt-4 p-4 bg-green-100 text-green-800 rounded-lg flex items-center w-full max-w-md border border-green-300">
+          <i data-lucide="check-circle" class="w-6 h-6 mr-3 text-green-600"></i>
+          <div>
+            <h3 class="font-bold">¡Felicidades!</h3>
+            <p class="text-sm">Has completado el crucigrama correctamente. Recuerda que la información y prevención son la mejor defensa.</p>
+          </div>
+        </div>
+        
+        <div id="error-msg" class="hidden mt-4 p-4 bg-red-50 text-red-800 rounded-lg flex items-center w-full max-w-md border border-red-200">
+          <i data-lucide="x-circle" class="w-6 h-6 mr-3 text-red-500"></i>
+          <div>
+            <h3 class="font-bold">Hay algunos errores</h3>
+            <p class="text-sm">Las letras marcadas en rojo no son correctas. ¡Sigue intentándolo!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Pistas -->
+      <div class="flex-1 max-w-lg">
+        <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 h-full">
+          
+          <div class="mb-8">
+            <h2 class="text-xl font-bold text-teal-800 mb-4 border-b-2 border-teal-200 pb-2">Horizontales</h2>
+            <ul id="across-clues" class="space-y-3">
+              <!-- Las pistas horizontales se generarán aquí -->
+            </ul>
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-teal-800 mb-4 border-b-2 border-teal-200 pb-2">Verticales</h2>
+            <ul id="down-clues" class="space-y-3">
+              <!-- Las pistas verticales se generarán aquí -->
+            </ul>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <script>
+    // Configuración y Datos
+    const WORDS = [
+      { id: '1D', number: 1, direction: 'down', word: 'GONORREA', row: 1, col: 6, clue: 'Infección bacteriana que puede causar ardor al orinar; a veces asintomática en mujeres.' },
+      { id: '2D', number: 2, direction: 'down', word: 'CLAMIDIA', row: 2, col: 2, clue: 'Una de las ETS bacterianas más comunes, puede causar infertilidad si no se trata a tiempo.' },
+      { id: '2A', number: 2, direction: 'across', word: 'CONDON', row: 2, col: 2, clue: 'Método anticonceptivo de barrera que previene embarazos y la mayoría de ETS.' },
+      { id: '3D', number: 3, direction: 'down', word: 'VPH', row: 4, col: 3, clue: 'Virus muy común responsable de las verrugas genitales y ciertos tipos de cáncer (siglas).' },
+      { id: '4A', number: 4, direction: 'across', word: 'VIH', row: 6, col: 1, clue: 'Virus que ataca el sistema inmunológico, del cual se derivan los tratamientos antirretrovirales (siglas).' },
+      { id: '5A', number: 5, direction: 'across', word: 'HERPES', row: 7, col: 5, clue: 'Infección viral común que causa llagas o ampollas dolorosas en los genitales o boca.' },
+      { id: '6D', number: 6, direction: 'down', word: 'SIFILIS', row: 7, col: 10, clue: 'Infección bacteriana que progresa en etapas, comenzando frecuentemente con un chancro o llaga indolora.' },
+      { id: '7A', number: 7, direction: 'across', word: 'SIDA', row: 13, col: 10, clue: 'Etapa final y más grave de la infección causada por el Virus de Inmunodeficiencia Humana (siglas).' }
+    ];
+
+    const GRID_SIZE = 15;
+
+    // Estado global
+    let grid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+    let userAnswers = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+    let inputRefs = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
     
-    if (cellRefs.current[r][c]) {
-      cellRefs.current[r][c].focus();
+    let focusedCell = { r: 2, c: 2 };
+    let currentDirection = 'across'; 
+    let validationErrors = null;
+    let isSuccess = false;
+
+    // Inicialización
+    function init() {
+      lucide.createIcons();
+      generateGridData();
+      renderGrid();
+      renderClues();
+      updateVisuals();
     }
-  };
 
-  const handleClueClick = (wordObj) => {
-    setFocusedCell({ r: wordObj.row, c: wordObj.col });
-    setDirection(wordObj.direction);
-    if (cellRefs.current[wordObj.row][wordObj.col]) {
-      cellRefs.current[wordObj.row][wordObj.col].focus();
+    // Generar la matriz lógica
+    function generateGridData() {
+      WORDS.forEach(wordObj => {
+        let r = wordObj.row;
+        let c = wordObj.col;
+        for (let i = 0; i < wordObj.word.length; i++) {
+          if (!grid[r][c]) {
+            grid[r][c] = { correctLetter: wordObj.word[i], words: [], number: null };
+          }
+          grid[r][c].words.push(wordObj.id);
+          if (i === 0 && !grid[r][c].number) {
+            grid[r][c].number = wordObj.number;
+          }
+          if (wordObj.direction === 'across') c++;
+          else r++;
+        }
+      });
     }
-  };
 
-  const moveToNext = (r, c, currentDirection) => {
-    let nextR = r;
-    let nextC = c;
-    if (currentDirection === 'across') nextC++;
-    else nextR++;
+    // Renderizar la cuadrícula en el DOM
+    function renderGrid() {
+      const container = document.getElementById('grid-container');
+      container.innerHTML = '';
 
-    if (grid[nextR] && grid[nextR][nextC]) {
-      setFocusedCell({ r: nextR, c: nextC });
-      if (cellRefs.current[nextR][nextC]) cellRefs.current[nextR][nextC].focus();
-    }
-  };
+      for (let r = 0; r < GRID_SIZE; r++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'flex';
+        
+        for (let c = 0; c < GRID_SIZE; c++) {
+          const cellWrapper = document.createElement('div');
+          cellWrapper.className = 'relative';
 
-  const moveToPrev = (r, c, currentDirection) => {
-    let prevR = r;
-    let prevC = c;
-    if (currentDirection === 'across') prevC--;
-    else prevR--;
+          if (grid[r][c]) {
+            const bgDiv = document.createElement('div');
+            bgDiv.id = `cell-bg-${r}-${c}`;
+            bgDiv.className = 'cell-bg relative border-r border-b border-slate-400 w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex items-center justify-center';
 
-    if (grid[prevR] && grid[prevR][prevC]) {
-      setFocusedCell({ r: prevR, c: prevC });
-      if (cellRefs.current[prevR][prevC]) cellRefs.current[prevR][prevC].focus();
-    }
-  };
+            if (grid[r][c].number) {
+              const numSpan = document.createElement('span');
+              numSpan.className = 'absolute top-0.5 left-1 text-[9px] sm:text-[10px] font-semibold text-slate-600 select-none pointer-events-none';
+              numSpan.innerText = grid[r][c].number;
+              bgDiv.appendChild(numSpan);
+            }
 
-  const handleKeyDown = (e, r, c) => {
-    if (validationErrors) setValidationErrors(null);
+            const input = document.createElement('input');
+            input.className = 'w-full h-full text-center bg-transparent text-lg sm:text-xl font-bold uppercase caret-transparent cursor-pointer focus:outline-none';
+            input.maxLength = 1;
+            input.value = userAnswers[r][c];
+            
+            // Event Listeners
+            input.addEventListener('input', (e) => handleChange(e, r, c));
+            input.addEventListener('keydown', (e) => handleKeyDown(e, r, c));
+            input.addEventListener('click', () => handleCellClick(r, c));
+            input.addEventListener('focus', () => {
+              if (focusedCell.r !== r || focusedCell.c !== c) {
+                setFocusedCell(r, c);
+              }
+            });
 
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      if (userAnswers[r][c] === '') {
-        moveToPrev(r, c, direction);
-      } else {
-        const newAnswers = [...userAnswers];
-        newAnswers[r][c] = '';
-        setUserAnswers(newAnswers);
+            inputRefs[r][c] = input;
+            bgDiv.appendChild(input);
+            cellWrapper.appendChild(bgDiv);
+          } else {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-transparent';
+            cellWrapper.appendChild(emptyDiv);
+          }
+          rowDiv.appendChild(cellWrapper);
+        }
+        container.appendChild(rowDiv);
       }
-    } else if (e.key === 'ArrowRight') {
-      if (grid[r][c + 1]) handleCellClick(r, c + 1);
-    } else if (e.key === 'ArrowLeft') {
-      if (grid[r][c - 1]) handleCellClick(r, c - 1);
-    } else if (e.key === 'ArrowDown') {
-      if (grid[r + 1] && grid[r + 1][c]) handleCellClick(r + 1, c);
-    } else if (e.key === 'ArrowUp') {
-      if (grid[r - 1] && grid[r - 1][c]) handleCellClick(r - 1, c);
     }
-  };
 
-  const handleChange = (e, r, c) => {
-    const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
-    if (val) {
-      const newAnswers = [...userAnswers];
-      newAnswers[r][c] = val.slice(-1); // Only take last char
-      setUserAnswers(newAnswers);
-      moveToNext(r, c, direction);
+    // Renderizar Pistas
+    function renderClues() {
+      const acrossList = document.getElementById('across-clues');
+      const downList = document.getElementById('down-clues');
+      
+      WORDS.filter(w => w.direction === 'across').sort((a,b) => a.number - b.number).forEach(w => {
+        acrossList.appendChild(createClueElement(w));
+      });
+      
+      WORDS.filter(w => w.direction === 'down').sort((a,b) => a.number - b.number).forEach(w => {
+        downList.appendChild(createClueElement(w));
+      });
     }
-  };
 
-  const checkAnswers = () => {
-    let allCorrect = true;
-    let errors = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false));
-    let hasAttempt = false;
+    function createClueElement(w) {
+      const li = document.createElement('li');
+      li.id = `clue-${w.id}`;
+      li.dataset.id = w.id;
+      li.className = 'clue-item cursor-pointer p-3 rounded-lg border transition-colors bg-white border-transparent hover:bg-slate-100';
+      li.onclick = () => handleClueClick(w);
+      li.innerHTML = `<span class="font-bold text-teal-700 mr-2">${w.number}.</span><span class="text-slate-700 text-sm md:text-base leading-relaxed">${w.clue}</span>`;
+      return li;
+    }
 
-    grid.forEach((row, r) => {
-      row.forEach((cell, c) => {
-        if (cell) {
-          if (userAnswers[r][c]) hasAttempt = true;
-          if (userAnswers[r][c] !== cell.correctLetter) {
-            allCorrect = false;
-            if (userAnswers[r][c] !== '') {
-               errors[r][c] = true;
+    // Lógica de Interacción
+    function getActiveWords(r, c) {
+      return grid[r] && grid[r][c] ? grid[r][c].words : [];
+    }
+
+    function setFocusedCell(r, c) {
+      focusedCell = { r, c };
+      updateVisuals();
+    }
+
+    function handleCellClick(r, c) {
+      validationErrors = null;
+      if (focusedCell.r === r && focusedCell.c === c) {
+        const cellWords = getActiveWords(r, c);
+        if (cellWords.length > 1) {
+          currentDirection = currentDirection === 'across' ? 'down' : 'across';
+        }
+      } else {
+        const cellWords = getActiveWords(r, c);
+        focusedCell = { r, c };
+        if (cellWords.length === 1) {
+          const word = WORDS.find(w => w.id === cellWords[0]);
+          currentDirection = word.direction;
+        }
+      }
+      if (inputRefs[r][c]) inputRefs[r][c].focus();
+      updateVisuals();
+    }
+
+    function handleClueClick(wordObj) {
+      focusedCell = { r: wordObj.row, c: wordObj.col };
+      currentDirection = wordObj.direction;
+      if (inputRefs[wordObj.row][wordObj.col]) {
+        inputRefs[wordObj.row][wordObj.col].focus();
+      }
+      updateVisuals();
+    }
+
+    function moveToNext(r, c, dir) {
+      let nextR = r, nextC = c;
+      if (dir === 'across') nextC++; else nextR++;
+      if (grid[nextR] && grid[nextR][nextC]) {
+        focusedCell = { r: nextR, c: nextC };
+        if (inputRefs[nextR][nextC]) inputRefs[nextR][nextC].focus();
+        updateVisuals();
+      }
+    }
+
+    function moveToPrev(r, c, dir) {
+      let prevR = r, prevC = c;
+      if (dir === 'across') prevC--; else prevR--;
+      if (grid[prevR] && grid[prevR][prevC]) {
+        focusedCell = { r: prevR, c: prevC };
+        if (inputRefs[prevR][prevC]) inputRefs[prevR][prevC].focus();
+        updateVisuals();
+      }
+    }
+
+    function handleKeyDown(e, r, c) {
+      validationErrors = null;
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (userAnswers[r][c] === '') {
+          moveToPrev(r, c, currentDirection);
+        } else {
+          userAnswers[r][c] = '';
+          inputRefs[r][c].value = '';
+          updateVisuals();
+        }
+      } else if (e.key === 'ArrowRight' && grid[r][c + 1]) handleCellClick(r, c + 1);
+      else if (e.key === 'ArrowLeft' && grid[r][c - 1]) handleCellClick(r, c - 1);
+      else if (e.key === 'ArrowDown' && grid[r + 1] && grid[r + 1][c]) handleCellClick(r + 1, c);
+      else if (e.key === 'ArrowUp' && grid[r - 1] && grid[r - 1][c]) handleCellClick(r - 1, c);
+    }
+
+    function handleChange(e, r, c) {
+      const val = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+      if (val) {
+        userAnswers[r][c] = val.slice(-1);
+        inputRefs[r][c].value = userAnswers[r][c];
+        moveToNext(r, c, currentDirection);
+      } else {
+        inputRefs[r][c].value = '';
+      }
+    }
+
+    // Verificación
+    function checkAnswers() {
+      let allCorrect = true;
+      let hasAttempt = false;
+      validationErrors = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(false));
+
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if (grid[r][c]) {
+            if (userAnswers[r][c]) hasAttempt = true;
+            if (userAnswers[r][c] !== grid[r][c].correctLetter) {
+              allCorrect = false;
+              if (userAnswers[r][c] !== '') {
+                validationErrors[r][c] = true;
+              }
             }
           }
         }
-      });
-    });
+      }
 
-    if (allCorrect && hasAttempt) {
-      setIsSuccess(true);
-      setValidationErrors(null);
-    } else {
-      setIsSuccess(false);
-      setValidationErrors(errors);
+      isSuccess = allCorrect && hasAttempt;
+      if (isSuccess) validationErrors = null;
+      updateVisuals();
     }
-  };
 
-  const resetGrid = () => {
-    setUserAnswers(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('')));
-    setValidationErrors(null);
-    setIsSuccess(false);
-    setFocusedCell({ r: 2, c: 2 });
-    setDirection('across');
-  };
+    function resetGrid() {
+      userAnswers = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(''));
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if (inputRefs[r][c]) inputRefs[r][c].value = '';
+        }
+      }
+      validationErrors = null;
+      isSuccess = false;
+      focusedCell = { r: 2, c: 2 };
+      currentDirection = 'across';
+      if(inputRefs[2][2]) inputRefs[2][2].focus();
+      updateVisuals();
+    }
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans md:p-8 p-4">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+    // Actualizar Clases CSS y UI
+    function updateVisuals() {
+      // 1. Actualizar Cuadrícula
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if (grid[r][c]) {
+            const bgDiv = document.getElementById(`cell-bg-${r}-${c}`);
+            const isActiveCell = focusedCell.r === r && focusedCell.c === c;
+            const activeWords = getActiveWords(focusedCell.r, focusedCell.c);
+            let isPartOfActiveWord = false;
+
+            WORDS.forEach(word => {
+              if (activeWords.includes(word.id) && word.direction === currentDirection) {
+                if (word.direction === 'across' && r === word.row && c >= word.col && c < word.col + word.word.length) isPartOfActiveWord = true;
+                if (word.direction === 'down' && c === word.col && r >= word.row && r < word.row + word.word.length) isPartOfActiveWord = true;
+              }
+            });
+
+            let baseClass = 'cell-bg relative border-r border-b border-slate-400 w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex items-center justify-center ';
+            let highlightClass = 'bg-white hover:bg-slate-50';
+
+            if (isActiveCell) highlightClass = 'bg-teal-300 outline-none ring-2 ring-teal-600 z-10';
+            else if (isPartOfActiveWord) highlightClass = 'bg-teal-100';
+            else if (validationErrors && validationErrors[r][c]) highlightClass = 'bg-red-100 text-red-600';
+            else if (isSuccess) highlightClass = 'bg-green-100 text-green-700';
+
+            bgDiv.className = baseClass + highlightClass;
+          }
+        }
+      }
+
+      // 2. Actualizar Pistas
+      document.querySelectorAll('.clue-item').forEach(el => {
+        const wId = el.dataset.id;
+        const w = WORDS.find(word => word.id === wId);
+        let isActiveClue = false;
         
-        {/* Header */}
-        <div className="bg-teal-700 text-white p-6 md:p-8">
-          <h1 className="text-3xl font-bold mb-2">Crucigrama: Educación Sexual y Prevención</h1>
-          <p className="text-teal-100 flex items-center text-sm md:text-base">
-            <Info className="w-5 h-5 mr-2" />
-            Aprende sobre las Enfermedades de Transmisión Sexual (ETS) completando este juego.
-          </p>
-        </div>
+        if (currentDirection === w.direction) {
+          if (w.direction === 'across' && focusedCell.r === w.row && focusedCell.c >= w.col && focusedCell.c < w.col + w.word.length) isActiveClue = true;
+          if (w.direction === 'down' && focusedCell.c === w.col && focusedCell.r >= w.row && focusedCell.r < w.row + w.word.length) isActiveClue = true;
+        }
 
-        <div className="flex flex-col lg:flex-row p-6 gap-8">
-          
-          {/* Left Column: Grid */}
-          <div className="flex-1 flex flex-col items-center select-none overflow-x-auto">
-            <div className="inline-block p-4 bg-slate-100 rounded-xl">
-              <div className="flex flex-col border-t border-l border-slate-400">
-                {grid.map((row, r) => (
-                  <div className="flex" key={r}>
-                    {row.map((cell, c) => (
-                      <div key={`${r}-${c}`} className="relative">
-                        {cell ? (
-                          <div className={`relative border-r border-b border-slate-400 w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 flex items-center justify-center ${getHighlightClass(r, c)}`}>
-                            {cell.number && (
-                              <span className="absolute top-0.5 left-1 text-[9px] sm:text-[10px] font-semibold text-slate-600 select-none">
-                                {cell.number}
-                              </span>
-                            )}
-                            <input
-                              ref={el => cellRefs.current[r][c] = el}
-                              className={`w-full h-full text-center bg-transparent text-lg sm:text-xl font-bold uppercase caret-transparent cursor-pointer focus:outline-none`}
-                              maxLength={1}
-                              value={userAnswers[r][c]}
-                              onChange={(e) => handleChange(e, r, c)}
-                              onKeyDown={(e) => handleKeyDown(e, r, c)}
-                              onClick={() => handleCellClick(r, c)}
-                              onFocus={() => {
-                                // Prevent visual focus jumps when programmatically focusing
-                                if(focusedCell.r !== r || focusedCell.c !== c) {
-                                  setFocusedCell({r, c});
-                                }
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-transparent"></div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
+        if (isActiveClue) {
+          el.className = 'clue-item cursor-pointer p-3 rounded-lg border transition-colors bg-teal-100 border-teal-300 shadow-sm';
+        } else {
+          el.className = 'clue-item cursor-pointer p-3 rounded-lg border transition-colors bg-white border-transparent hover:bg-slate-100';
+        }
+      });
 
-            {/* Actions */}
-            <div className="mt-6 flex gap-4 w-full justify-center">
-              <button 
-                onClick={resetGrid}
-                className="flex items-center px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reiniciar
-              </button>
-              <button 
-                onClick={checkAnswers}
-                className="flex items-center px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold shadow-md transition-colors"
-              >
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Verificar
-              </button>
-            </div>
+      // 3. Mostrar/Ocultar Mensajes
+      document.getElementById('success-msg').style.display = isSuccess ? 'flex' : 'none';
+      document.getElementById('error-msg').style.display = (validationErrors && !isSuccess) ? 'flex' : 'none';
+    }
 
-            {/* Validation Message */}
-            {isSuccess && (
-              <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg flex items-center w-full max-w-md border border-green-300">
-                <CheckCircle className="w-6 h-6 mr-3 text-green-600" />
-                <div>
-                  <h3 className="font-bold">¡Felicidades!</h3>
-                  <p className="text-sm">Has completado el crucigrama correctamente. Recuerda que la información y prevención son la mejor defensa.</p>
-                </div>
-              </div>
-            )}
-            
-            {validationErrors && !isSuccess && (
-              <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-lg flex items-center w-full max-w-md border border-red-200">
-                 <XCircle className="w-6 h-6 mr-3 text-red-500" />
-                 <div>
-                   <h3 className="font-bold">Hay algunos errores</h3>
-                   <p className="text-sm">Las letras marcadas en rojo no son correctas. ¡Sigue intentándolo!</p>
-                 </div>
-              </div>
-            )}
-          </div>
+    // Iniciar aplicación cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', init);
 
-          {/* Right Column: Clues */}
-          <div className="flex-1 max-w-lg">
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 h-full">
-              
-              <div className="mb-8">
-                <h2 className="text-xl font-bold text-teal-800 mb-4 border-b-2 border-teal-200 pb-2">
-                  Horizontales
-                </h2>
-                <ul className="space-y-3">
-                  {WORDS.filter(w => w.direction === 'across').sort((a,b) => a.number - b.number).map(w => (
-                    <li 
-                      key={w.id} 
-                      onClick={() => handleClueClick(w)}
-                      className={`cursor-pointer p-3 rounded-lg border transition-colors ${
-                        focusedCell.r === w.row && focusedCell.c >= w.col && focusedCell.c < w.col + w.word.length && direction === 'across'
-                          ? 'bg-teal-100 border-teal-300 shadow-sm'
-                          : 'bg-white border-transparent hover:bg-slate-100'
-                      }`}
-                    >
-                      <span className="font-bold text-teal-700 mr-2">{w.number}.</span>
-                      <span className="text-slate-700 text-sm md:text-base leading-relaxed">{w.clue}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold text-teal-800 mb-4 border-b-2 border-teal-200 pb-2">
-                  Verticales
-                </h2>
-                <ul className="space-y-3">
-                  {WORDS.filter(w => w.direction === 'down').sort((a,b) => a.number - b.number).map(w => (
-                    <li 
-                      key={w.id} 
-                      onClick={() => handleClueClick(w)}
-                      className={`cursor-pointer p-3 rounded-lg border transition-colors ${
-                        focusedCell.c === w.col && focusedCell.r >= w.row && focusedCell.r < w.row + w.word.length && direction === 'down'
-                          ? 'bg-teal-100 border-teal-300 shadow-sm'
-                          : 'bg-white border-transparent hover:bg-slate-100'
-                      }`}
-                    >
-                      <span className="font-bold text-teal-700 mr-2">{w.number}.</span>
-                      <span className="text-slate-700 text-sm md:text-base leading-relaxed">{w.clue}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-            </div>
-          </div>
-          
-        </div>
-      </div>
-    </div>
-  );
-}
+  </script>
+</body>
+</html>
