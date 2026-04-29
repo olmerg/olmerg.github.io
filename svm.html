@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero Interactivo - Support Vector Machine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Cargamos MathJax para renderizar las fórmulas de la diapositiva -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        canvas { 
+            background-color: #ffffff; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            cursor: crosshair;
+        }
+        .math-text { font-size: 0.85rem; }
+    </style>
+</head>
+<body class="p-6 text-slate-800">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-6 border-b pb-4">
+            <h1 class="text-3xl font-bold text-slate-900">Support Vector Machine (SVM) - Tablero Interactivo</h1>
+            <p class="text-slate-600 mt-2">Explora la optimización del hiperplano y la geometría de los vectores de soporte.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Panel Izquierdo: Controles y Métricas -->
+            <div class="lg:col-span-4 space-y-6">
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Configuración</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm font-medium text-slate-700 block mb-2">Clase a dibujar:</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer bg-blue-50 px-3 py-2 rounded border border-blue-200">
+                                    <input type="radio" name="classSelect" value="1" checked class="w-4 h-4 text-blue-600">
+                                    <span class="text-blue-700 font-bold">+1</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer bg-red-50 px-3 py-2 rounded border border-red-200">
+                                    <input type="radio" name="classSelect" value="-1" class="w-4 h-4 text-red-600">
+                                    <span class="text-red-700 font-bold">-1</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-sm font-medium text-slate-700">Parámetro de Regularización \(C\)</label>
+                                <span id="c-value-display" class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">C = 1.0</span>
+                            </div>
+                            <input type="range" id="c-param" min="0.1" max="50" step="0.5" value="1" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-[10px] text-slate-400 mt-1 italic">Controla el compromiso entre margen y error.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex gap-2">
+                        <button id="btn-clear" class="flex-1 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded transition-colors">Limpiar</button>
+                        <button id="btn-esc-1" class="flex-1 py-2 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded border border-indigo-200 transition-colors">Caso Ideal</button>
+                    </div>
+                </div>
+
+                <!-- Panel de Métricas -->
+                <div class="bg-slate-900 text-white p-5 rounded-lg shadow-inner">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Métricas de Optimización</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end border-b border-slate-800 pb-2">
+                            <span class="text-sm">Vectores de Soporte:</span>
+                            <span id="sv-count" class="text-xl font-mono text-indigo-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-end border-b border-slate-800 pb-2">
+                            <span class="text-sm">Ancho del Margen (\(2/||w||\)):</span>
+                            <span id="margin-width" class="text-xl font-mono text-emerald-400">0.00</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500 leading-relaxed italic">
+                            Nota: Los vectores de soporte son puntos \(x_i\) donde \(|D(x_i)| \approx 1\).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Central: Canvas -->
+            <div class="lg:col-span-5 flex flex-col items-center">
+                <canvas id="svmCanvas" width="550" height="550" class="w-full max-w-[550px] aspect-square"></canvas>
+                <div id="pedagogical-hint" class="mt-4 p-4 bg-blue-50 text-blue-800 text-sm rounded border border-blue-200 w-full text-center font-medium">
+                    Haz clic en el lienzo para agregar puntos de diferentes colores.
+                </div>
+            </div>
+
+            <!-- Panel Derecho: Relación con la Diapositiva -->
+            <div class="lg:col-span-3 space-y-4">
+                <div class="bg-white p-5 rounded-lg border border-slate-200 h-full">
+                    <h3 class="text-md font-bold mb-3 flex items-center gap-2">
+                        <span class="bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded">TEORÍA</span>
+                        ¿Qué está calculando <code>trainSVM</code>?
+                    </h3>
+                    
+                    <div class="space-y-5 math-text text-slate-700">
+                        <section>
+                            <p class="font-bold text-xs text-slate-500 uppercase mb-1">1. Función de Decisión</p>
+                            <p class="bg-slate-50 p-2 rounded border">
+                                \( D(x) = \langle w, x \rangle + b \)
+                            </p>
+                            <p class="text-[11px] mt-1 text-slate-500">Calculamos el producto punto de los pesos \(w\) por tus coordenadas \(x\).</p>
+                        </section>
+
+                        <section>
+                            <p class="font-bold text-xs text-slate-500 uppercase mb-1">2. La Condición del Margen</p>
+                            <p class="bg-slate-50 p-2 rounded border">
+                                \( y_i (\langle w, x_i \rangle + b) \ge 1 \)
+                            </p>
+                            <p class="text-[11px] mt-1 text-slate-500 italic">Si esta condición es < 1, el punto es un <b>Vector de Soporte</b> o un error.</p>
+                        </section>
+
+                        <section>
+                            <p class="font-bold text-xs text-slate-500 uppercase mb-1">3. Optimización en código</p>
+                            <div class="text-[11px] font-mono bg-slate-900 text-indigo-300 p-3 rounded">
+                                // Derivada de Regularización<br>
+                                grad_w = w;<br>
+                                // Derivada de Error (Hinge)<br>
+                                if (margin < 1) {<br>
+                                &nbsp;&nbsp;grad_w -= C * y * x;<br>
+                                &nbsp;&nbsp;grad_b -= C * y;<br>
+                                }
+                            </div>
+                            <p class="text-[11px] mt-1 text-slate-500">El descenso de gradiente minimiza la norma de \(w\) (máximo margen) penalizando puntos intrusos según \(C\).</p>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('svmCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const scale = 45; 
+
+        let points = [];
+        let w = [0, 0];
+        let b = 0;
+
+        const radios = document.getElementsByName('classSelect');
+        const cParamSlider = document.getElementById('c-param');
+        const cValueDisplay = document.getElementById('c-value-display');
+        const btnClear = document.getElementById('btn-clear');
+        const svCountDisplay = document.getElementById('sv-count');
+        const marginWidthDisplay = document.getElementById('margin-width');
+        const pedagogicalHint = document.getElementById('pedagogical-hint');
+        const btnEsc1 = document.getElementById('btn-esc-1');
+
+        function toMath(cx, cy) {
+            return [(cx - width / 2) / scale, -(cy - height / 2) / scale];
+        }
+
+        function toCanvas(mx, my) {
+            return [mx * scale + width / 2, -my * scale + height / 2];
+        }
+
+        function getCurrentClass() {
+            for (let radio of radios) if (radio.checked) return parseInt(radio.value);
+            return 1;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+            points.push({ cx, cy, class: getCurrentClass() });
+            trainAndDraw();
+        });
+
+        cParamSlider.addEventListener('input', (e) => {
+            cValueDisplay.innerText = `C = ${parseFloat(e.target.value).toFixed(1)}`;
+            trainAndDraw();
+        });
+
+        btnClear.addEventListener('click', () => {
+            points = []; w = [0, 0]; b = 0;
+            draw();
+        });
+
+        btnEsc1.addEventListener('click', () => {
+            points = [
+                { cx: 150, cy: 150, class: 1 }, { cx: 200, cy: 100, class: 1 }, { cx: 120, cy: 220, class: 1 },
+                { cx: 400, cy: 400, class: -1 }, { cx: 450, cy: 350, class: -1 }, { cx: 380, cy: 480, class: -1 }
+            ];
+            trainAndDraw();
+            pedagogicalHint.innerText = "Caso Ideal: Observa cómo el margen busca el espacio libre más grande.";
+        });
+
+        /**
+         * RELACIÓN CON LA DIAPOSITIVA:
+         * El objetivo es minimizar 1/2 ||w||^2 + C * sum(hinge_loss)
+         */
+        function trainSVM() {
+            if (points.length < 2) return;
+            const classes = new Set(points.map(p => p.class));
+            if (classes.size < 2) return;
+
+            w = [0.01, -0.01]; 
+            b = 0;
+            const C = parseFloat(cParamSlider.value);
+            const lr = 0.005;
+            const epochs = 1500;
+
+            for (let iter = 0; iter < epochs; iter++) {
+                // El gradiente de (1/2)||w||^2 es simplemente w.
+                // Esto es lo que minimiza la norma y maximiza el margen.
+                let grad_w0 = w[0]; 
+                let grad_w1 = w[1];
+                let grad_b = 0;
+
+                for (let p of points) {
+                    let [x0, x1] = toMath(p.cx, p.cy);
+                    let y = p.class;
+                    
+                    // Condición D(x) de la diapositiva
+                    let decisionValue = w[0] * x0 + w[1] * x1 + b;
+                    let marginCondition = y * decisionValue;
+
+                    // Si marginCondition < 1, el punto es un Vector de Soporte (o error)
+                    // que contribuye al gradiente (Hinge Loss)
+                    if (marginCondition < 1) {
+                        grad_w0 -= C * y * x0;
+                        grad_w1 -= C * y * x1;
+                        grad_b -= C * y;
+                    }
+                }
+                w[0] -= lr * grad_w0;
+                w[1] -= lr * grad_w1;
+                b -= lr * grad_b;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Grid
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < width; i += scale) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
+            }
+
+            // Ejes
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2, height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, height/2); ctx.lineTo(width, height/2); ctx.stroke();
+
+            // Dibujar líneas del modelo
+            if (w[0] !== 0 || w[1] !== 0) {
+                const drawLine = (offset, color, dash = [], lineWidth = 2) => {
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.setLineDash(dash);
+                    ctx.lineWidth = lineWidth;
+                    let x1 = -20, x2 = 20;
+                    let y1 = (offset - b - w[0] * x1) / w[1];
+                    let y2 = (offset - b - w[0] * x2) / w[1];
+                    let p1 = toCanvas(x1, y1);
+                    let p2 = toCanvas(x2, y2);
+                    ctx.moveTo(p1[0], p1[1]);
+                    ctx.lineTo(p2[0], p2[1]);
+                    ctx.stroke();
+                };
+
+                drawLine(-1, '#fee2e2', [4, 4], 1); // Margen inferior
+                drawLine(1, '#dbeafe', [4, 4], 1);  // Margen superior
+                drawLine(0, '#1e293b', [], 2);      // Hiperplano central
+                ctx.setLineDash([]);
+            }
+
+            let svCount = 0;
+            points.forEach(p => {
+                let [x0, x1] = toMath(p.cx, p.cy);
+                let dist = p.class * (w[0] * x0 + w[1] * x1 + b);
+                let isSV = (w[0] !== 0) && dist <= 1.05;
+
+                if (isSV) {
+                    svCount++;
+                    ctx.beginPath();
+                    ctx.arc(p.cx, p.cy, 11, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#1e293b';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                ctx.beginPath();
+                ctx.arc(p.cx, p.cy, 6, 0, Math.PI * 2);
+                ctx.fillStyle = p.class === 1 ? '#3b82f6' : '#ef4444';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            });
+
+            svCountDisplay.innerText = svCount;
+            let wNorm = Math.sqrt(w[0]**2 + w[1]**2);
+            marginWidthDisplay.innerText = wNorm > 0 ? (2/wNorm).toFixed(3) : "0.00";
+        }
+
+        function trainAndDraw() {
+            trainSVM();
+            draw();
+        }
+
+        draw();
+    </script>
+</body>
+</html>
