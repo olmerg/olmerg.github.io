@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ejercicio MLP: Validacion de calculo manual</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FNRL3XH0JH"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-FNRL3XH0JH');
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
+    <style>
+      body { background: #f5f6f8; }
+      .card { border-radius: 14px; }
+      .mono { font-family: Consolas, Monaco, 'Courier New', monospace; }
+      .layer-title { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.02em; color: #37517e; }
+      .small-note { color: #5f6b7a; font-size: 0.9rem; }
+      .incorrect-row { background: #fff3f3; }
+      .config-disabled { opacity: 0.55; }
+      .badge-step { background: #37517e; }
+      .table > :not(caption) > * > * { vertical-align: middle; }
+      .table thead th { font-size: 0.85rem; }
+      #topology-network {
+        height: 320px;
+        border: 1px solid #d9dee7;
+        border-radius: 10px;
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4">
+      <header class="mb-4 text-center">
+        <h1 class="h2 mb-2">Ejercicio de Multi Layer Perceptron (MLP)</h1>
+        <p class="small-note mb-0">
+          Esta actividad permite practicar y verificar, paso a paso, el calculo manual del forward pass en un MLP,
+          fortaleciendo la comprension de como se transforman las entradas en cada capa hasta obtener la salida final.
+          Para facilitar el aprendizaje, las entradas, los pesos y los sesgos se generan como enteros de una sola cifra.
+        </p>
+      </header>
+
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Configuracion</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="hidden-layers" class="form-label">Capas ocultas</label>
+                <select id="hidden-layers" class="form-select">
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Neuronas por capa (2 a 4)</label>
+                <div class="row g-2" id="neurons-config">
+                  <div class="col-4" data-layer-config="1">
+                    <label class="form-label small mb-1">Capa 1</label>
+                    <select id="neurons-1" class="form-select form-select-sm">
+                      <option value="2">2</option>
+                      <option value="3" selected>3</option>
+                      <option value="4">4</option>
+                    </select>
+                  </div>
+                  <div class="col-4" data-layer-config="2">
+                    <label class="form-label small mb-1">Capa 2</label>
+                    <select id="neurons-2" class="form-select form-select-sm">
+                      <option value="2">2</option>
+                      <option value="3" selected>3</option>
+                      <option value="4">4</option>
+                    </select>
+                  </div>
+                  <div class="col-4" data-layer-config="3">
+                    <label class="form-label small mb-1">Capa 3</label>
+                    <select id="neurons-3" class="form-select form-select-sm">
+                      <option value="2">2</option>
+                      <option value="3" selected>3</option>
+                      <option value="4">4</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label for="activation" class="form-label">Funcion de activacion</label>
+                <select id="activation" class="form-select">
+                  <option value="relu" selected>ReLU</option>
+                  <option value="linear">Lineal</option>
+                </select>
+              </div>
+
+              <div class="d-grid gap-2">
+                <button id="generate-btn" class="btn btn-primary">Nuevo ejercicio</button>
+                <button id="check-btn" class="btn btn-success">Resolver / Validar</button>
+                <button id="show-btn" class="btn btn-outline-secondary">Mostrar respuestas</button>
+              </div>
+            </div>
+            <div class="card-footer small-note">
+              Entrada fija: x1 y x2. Salida: y1.
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Topologia de la red</div>
+            <div class="card-body">
+              <p class="small-note mb-2">Visualizacion de la arquitectura seleccionada (entrada, capas ocultas y salida).</p>
+              <div id="topology-network"></div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">Datos del ejercicio</div>
+            <div class="card-body">
+              <div id="exercise-summary" class="small-note mb-3">Aun no hay ejercicio generado.</div>
+              <div id="equations-area"></div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm">
+            <div class="card-header fw-semibold">Tu respuesta</div>
+            <div class="card-body">
+              <div id="feedback" class="mb-3"></div>
+              <div id="answer-area" class="table-responsive"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const INPUT_DIM = 2;
+      const OUTPUT_DIM = 1;
+
+      const hiddenLayersEl = document.getElementById('hidden-layers');
+      const activationEl = document.getElementById('activation');
+      const neuronsEls = [
+        document.getElementById('neurons-1'),
+        document.getElementById('neurons-2'),
+        document.getElementById('neurons-3')
+      ];
+      const configBlocks = document.querySelectorAll('[data-layer-config]');
+
+      const summaryEl = document.getElementById('exercise-summary');
+      const equationsEl = document.getElementById('equations-area');
+      const answerEl = document.getElementById('answer-area');
+      const feedbackEl = document.getElementById('feedback');
+      const topologyEl = document.getElementById('topology-network');
+
+      const generateBtn = document.getElementById('generate-btn');
+      const checkBtn = document.getElementById('check-btn');
+      const showBtn = document.getElementById('show-btn');
+
+      const state = {
+        hiddenLayers: 2,
+        hiddenNeurons: [3, 3],
+        activation: 'relu',
+        exercise: null,
+        network: null
+      };
+
+      function randDigit() {
+        return Math.floor(Math.random() * 9) - 4;
+      }
+
+      function signed(n) {
+        if (n >= 0) return '+ ' + n;
+        return '- ' + Math.abs(n);
+      }
+
+      function applyActivation(z, activation) {
+        if (activation === 'relu') return Math.max(0, z);
+        return z;
+      }
+
+      function getLayerLabel(layerIndex, totalLayers) {
+        if (layerIndex < totalLayers - 1) {
+          return 'Capa oculta ' + (layerIndex + 1);
+        }
+        return 'Capa de salida';
+      }
+
+      function prevVarName(layerIndex, neuronIndex) {
+        if (layerIndex === 0) return 'x' + (neuronIndex + 1);
+        return 'h' + layerIndex + '_' + (neuronIndex + 1);
+      }
+
+      function currVarName(layerIndex, totalLayers, neuronIndex) {
+        if (layerIndex < totalLayers - 1) {
+          return 'h' + (layerIndex + 1) + '_' + (neuronIndex + 1);
+        }
+        return 'y' + (neuronIndex + 1);
+      }
+
+      function syncLayerControls() {
+        state.hiddenLayers = Number(hiddenLayersEl.value);
+        configBlocks.forEach((block, idx) => {
+          const enabled = idx < state.hiddenLayers;
+          const select = block.querySelector('select');
+          select.disabled = !enabled;
+          block.classList.toggle('config-disabled', !enabled);
+        });
+      }
+
+      function readConfig() {
+        syncLayerControls();
+        state.activation = activationEl.value;
+        state.hiddenNeurons = [];
+        for (let i = 0; i < state.hiddenLayers; i += 1) {
+          state.hiddenNeurons.push(Number(neuronsEls[i].value));
+        }
+      }
+
+      function generateExercise() {
+        readConfig();
+
+        const architecture = [INPUT_DIM, ...state.hiddenNeurons, OUTPUT_DIM];
+        const totalLayers = architecture.length - 1;
+
+        const x = [];
+        for (let i = 0; i < INPUT_DIM; i += 1) x.push(randDigit());
+
+        const layers = [];
+        let current = [...x];
+
+        for (let l = 0; l < totalLayers; l += 1) {
+          const neurons = architecture[l + 1];
+          const prevDim = architecture[l];
+          const W = [];
+          const b = [];
+          const z = [];
+          const a = [];
+
+          for (let n = 0; n < neurons; n += 1) {
+            const row = [];
+            for (let p = 0; p < prevDim; p += 1) row.push(randDigit());
+            const bias = randDigit();
+            const zVal = row.reduce((acc, w, idx) => acc + w * current[idx], 0) + bias;
+            const aVal = applyActivation(zVal, state.activation);
+
+            W.push(row);
+            b.push(bias);
+            z.push(zVal);
+            a.push(aVal);
+          }
+
+          layers.push({
+            layerIndex: l,
+            label: getLayerLabel(l, totalLayers),
+            W,
+            b,
+            z,
+            a,
+            prevDim,
+            neurons
+          });
+
+          current = [...a];
+        }
+
+        state.exercise = {
+          x,
+          layers,
+          architecture,
+          activation: state.activation,
+          totalLayers
+        };
+
+        renderExercise();
+        renderTopology();
+        renderAnswerForm();
+        feedbackEl.innerHTML = '';
+      }
+
+      function getNodeLabel(layerIndex, neuronIndex, totalLayers) {
+        if (layerIndex === 0) return 'x' + (neuronIndex + 1);
+        if (layerIndex === totalLayers - 1) return 'y' + (neuronIndex + 1);
+        return 'h' + layerIndex + '_' + (neuronIndex + 1);
+      }
+
+      function getNodeColor(layerIndex, totalLayers) {
+        if (layerIndex === 0) return '#ead8c0';
+        if (layerIndex === totalLayers - 1) return '#c6daf9';
+        return '#f2f2f2';
+      }
+
+      function renderTopology() {
+        if (!state.exercise || !topologyEl) return;
+        if (typeof vis === 'undefined') {
+          topologyEl.innerHTML = '<div class="alert alert-warning m-2">No se pudo cargar la libreria de topologia.</div>';
+          return;
+        }
+
+        const arch = state.exercise.architecture;
+        const totalLayers = arch.length;
+        const nodes = [];
+        const edges = [];
+        const layerGap = 170;
+        const neuronGap = 75;
+        const xOffset = 70;
+        const yCenter = 160;
+        const nodeIds = [];
+
+        for (let l = 0; l < totalLayers; l += 1) {
+          const count = arch[l];
+          nodeIds[l] = [];
+          const layerHeight = (count - 1) * neuronGap;
+
+          for (let n = 0; n < count; n += 1) {
+            const id = 'L' + l + 'N' + n;
+            nodeIds[l].push(id);
+            nodes.push({
+              id,
+              label: getNodeLabel(l, n, totalLayers),
+              x: xOffset + l * layerGap,
+              y: yCenter - (layerHeight / 2) + n * neuronGap,
+              shape: 'circle',
+              color: {
+                background: getNodeColor(l, totalLayers),
+                border: '#636b77'
+              },
+              font: { face: 'Consolas', size: 14, color: '#22324d' },
+              borderWidth: 1.5,
+              fixed: true
+            });
+          }
+        }
+
+        for (let l = 0; l < totalLayers - 1; l += 1) {
+          for (let i = 0; i < nodeIds[l].length; i += 1) {
+            for (let j = 0; j < nodeIds[l + 1].length; j += 1) {
+              edges.push({
+                from: nodeIds[l][i],
+                to: nodeIds[l + 1][j],
+                color: { color: '#6d7682' },
+                width: 1
+              });
+            }
+          }
+        }
+
+        const data = {
+          nodes: new vis.DataSet(nodes),
+          edges: new vis.DataSet(edges)
+        };
+
+        const options = {
+          autoResize: true,
+          physics: false,
+          interaction: {
+            dragNodes: false,
+            dragView: false,
+            zoomView: false,
+            selectable: false
+          },
+          layout: {
+            randomSeed: 1
+          }
+        };
+
+        if (state.network) {
+          state.network.destroy();
+        }
+
+        state.network = new vis.Network(topologyEl, data, options);
+      }
+
+      function renderExercise() {
+        if (!state.exercise) return;
+
+        const ex = state.exercise;
+        const hiddenText = state.hiddenNeurons.join(' - ');
+        summaryEl.innerHTML =
+          '<span class="badge badge-step me-2">Ejercicio</span>' +
+          'Capas ocultas: <strong>' + state.hiddenLayers + '</strong> | ' +
+          'Neuronas: <strong>' + hiddenText + '</strong> | ' +
+          'Activacion: <strong>' + ex.activation.toUpperCase() + '</strong><br>' +
+          'Entrada: <span class="mono">x1=' + ex.x[0] + ', x2=' + ex.x[1] + '</span>';
+
+        let html = '';
+
+        ex.layers.forEach((layer, lIdx) => {
+          const prevNames = [];
+          for (let i = 0; i < layer.prevDim; i += 1) {
+            prevNames.push(prevVarName(lIdx, i));
+          }
+
+          html += '<div class="mb-4">';
+          html += '<div class="layer-title mb-2">' + layer.label + '</div>';
+          html += '<div class="table-responsive">';
+          html += '<table class="table table-sm table-bordered align-middle">';
+          html += '<thead><tr><th>Neurona</th>';
+
+          prevNames.forEach((name) => {
+            html += '<th class="mono">w(' + name + ')</th>';
+          });
+
+          html += '<th class="mono">b</th><th>Ecuacion</th></tr></thead><tbody>';
+
+          for (let n = 0; n < layer.neurons; n += 1) {
+            const outName = currVarName(lIdx, ex.totalLayers, n);
+            let eq = outName + ' = ' + ex.activation + '(';
+            for (let p = 0; p < layer.prevDim; p += 1) {
+              const w = layer.W[n][p];
+              if (p === 0) {
+                eq += w + '*' + prevNames[p] + ' ';
+              } else {
+                eq += signed(w) + '*' + prevNames[p] + ' ';
+              }
+            }
+            eq += signed(layer.b[n]) + ')';
+
+            html += '<tr><td class="mono">' + outName + '</td>';
+            for (let p = 0; p < layer.prevDim; p += 1) {
+              html += '<td class="mono">' + layer.W[n][p] + '</td>';
+            }
+            html += '<td class="mono">' + layer.b[n] + '</td>';
+            html += '<td class="mono">' + eq + '</td></tr>';
+          }
+
+          html += '</tbody></table></div></div>';
+        });
+
+        equationsEl.innerHTML = html;
+      }
+
+      function renderAnswerForm() {
+        if (!state.exercise) return;
+
+        const ex = state.exercise;
+        let html = '<table class="table table-bordered table-sm"><thead><tr>' +
+          '<th>Capa</th><th>Neurona</th><th>z (antes de activacion)</th><th>a (salida)</th></tr></thead><tbody>';
+
+        ex.layers.forEach((layer, lIdx) => {
+          for (let n = 0; n < layer.neurons; n += 1) {
+            const outName = currVarName(lIdx, ex.totalLayers, n);
+            html += '<tr>';
+            html += '<td>' + layer.label + '</td>';
+            html += '<td class="mono">' + outName + '</td>';
+            html += '<td><input type="number" step="any" class="form-control form-control-sm answer-input" data-layer="' + lIdx + '" data-neuron="' + n + '" data-kind="z"></td>';
+            html += '<td><input type="number" step="any" class="form-control form-control-sm answer-input" data-layer="' + lIdx + '" data-neuron="' + n + '" data-kind="a"></td>';
+            html += '</tr>';
+          }
+        });
+
+        html += '</tbody></table>';
+        answerEl.innerHTML = html;
+      }
+
+      function compareValues(userValue, expectedValue) {
+        return Math.abs(userValue - expectedValue) < 1e-9;
+      }
+
+      function validateAnswers() {
+        if (!state.exercise) {
+          feedbackEl.innerHTML = '<div class="alert alert-warning mb-0">Primero genera un ejercicio.</div>';
+          return;
+        }
+
+        const inputs = document.querySelectorAll('.answer-input');
+        const mistakes = [];
+        let okCount = 0;
+
+        inputs.forEach((input) => {
+          input.classList.remove('is-invalid');
+          input.classList.remove('is-valid');
+
+          const l = Number(input.dataset.layer);
+          const n = Number(input.dataset.neuron);
+          const kind = input.dataset.kind;
+
+          const expected = state.exercise.layers[l][kind][n];
+          const raw = input.value.trim();
+
+          if (raw === '') {
+            mistakes.push({ label: getFieldLabel(l, n, kind), expected, reason: 'vacio' });
+            input.classList.add('is-invalid');
+            return;
+          }
+
+          const userValue = Number(raw);
+          if (!Number.isFinite(userValue) || !compareValues(userValue, expected)) {
+            mistakes.push({ label: getFieldLabel(l, n, kind), expected, got: raw, reason: 'incorrecto' });
+            input.classList.add('is-invalid');
+            return;
+          }
+
+          okCount += 1;
+          input.classList.add('is-valid');
+        });
+
+        if (mistakes.length === 0) {
+          feedbackEl.innerHTML = '<div class="alert alert-success mb-0">Excelente: todos los datos estan correctos.</div>';
+          return;
+        }
+
+        let html = '<div class="alert alert-danger mb-3">' +
+          'Se encontraron <strong>' + mistakes.length + '</strong> dato(s) incorrecto(s). Correctos: ' + okCount +
+          ' de ' + inputs.length +
+          '.</div>';
+
+        html += '<div class="table-responsive"><table class="table table-sm table-bordered">';
+        html += '<thead><tr><th>Campo</th><th>Tu valor</th><th>Valor esperado</th><th>Estado</th></tr></thead><tbody>';
+
+        mistakes.forEach((m) => {
+          html += '<tr class="incorrect-row">';
+          html += '<td class="mono">' + m.label + '</td>';
+          html += '<td class="mono">' + (m.got ?? '-') + '</td>';
+          html += '<td class="mono">' + m.expected + '</td>';
+          html += '<td>' + m.reason + '</td>';
+          html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        feedbackEl.innerHTML = html;
+      }
+
+      function getFieldLabel(layerIndex, neuronIndex, kind) {
+        if (!state.exercise) return '';
+        const outName = currVarName(layerIndex, state.exercise.totalLayers, neuronIndex);
+        return outName + '.' + kind;
+      }
+
+      function fillCorrectAnswers() {
+        if (!state.exercise) {
+          feedbackEl.innerHTML = '<div class="alert alert-warning mb-0">Primero genera un ejercicio.</div>';
+          return;
+        }
+
+        const inputs = document.querySelectorAll('.answer-input');
+        inputs.forEach((input) => {
+          const l = Number(input.dataset.layer);
+          const n = Number(input.dataset.neuron);
+          const kind = input.dataset.kind;
+          input.value = state.exercise.layers[l][kind][n];
+          input.classList.remove('is-invalid');
+          input.classList.add('is-valid');
+        });
+
+        feedbackEl.innerHTML = '<div class="alert alert-info mb-0">Respuestas correctas cargadas en la tabla.</div>';
+      }
+
+      hiddenLayersEl.addEventListener('change', syncLayerControls);
+      generateBtn.addEventListener('click', generateExercise);
+      checkBtn.addEventListener('click', validateAnswers);
+      showBtn.addEventListener('click', fillCorrectAnswers);
+
+      syncLayerControls();
+      generateExercise();
+    </script>
+  </body>
+</html>
